@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { color } from "@/lib/designmd/tokens";
-import { hexToHsl, variationRamp } from "@/lib/designmd/color";
+import { hexToHsl, variationRamp, brandGradients } from "@/lib/designmd/color";
 import { ContrastBadge } from "@/components/editor/controls/ContrastBadge";
 import { Block, SectionHeader, hairline, type SectionProps } from "./common";
 
@@ -67,6 +67,14 @@ export function ColorPaletteSection({ doc, mark }: SectionProps) {
   const brand = BRAND_ROLES.filter((r) => doc.colors[r]);
   const surface = color(doc, "surface", color(doc, "background", "#ffffff"));
 
+  // Brand gradients — from the Brandbook scheme when present, else the role
+  // palette. Angle follows the Brandbook gradient setting.
+  const scheme =
+    doc.brandbook?.schemeColors?.length
+      ? doc.brandbook.schemeColors
+      : brand.map((r) => color(doc, r));
+  const gradients = brandGradients(scheme, doc.brandbook?.gradients?.angle ?? 135);
+
   return (
     <Block>
       <SectionHeader index="01" kicker="Color" title="Palette & color theory" />
@@ -104,6 +112,31 @@ export function ColorPaletteSection({ doc, mark }: SectionProps) {
             </div>
           );
         })}
+      </div>
+
+      {/* Gradients — derived from the brand scheme, click to copy the CSS */}
+      <div className="mt-8">
+        <Sub>Gradients</Sub>
+        <div className="grid grid-cols-2 @md:grid-cols-3 gap-3">
+          {gradients.map((g) => (
+            <button
+              key={g.label}
+              type="button"
+              title="Copy CSS"
+              onClick={() => navigator.clipboard?.writeText(g.css)}
+              className="group text-left rounded-lg overflow-hidden cursor-pointer"
+              style={{ ...hairline() }}
+            >
+              <span className="block h-16 w-full" style={{ background: g.css }} />
+              <span className="block px-2 py-1.5">
+                <span className="block text-[11px] font-medium truncate">{g.label}</span>
+                <span className="block text-[10px] opacity-50 font-mono truncate group-hover:opacity-80">
+                  {g.css}
+                </span>
+              </span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Contrast */}

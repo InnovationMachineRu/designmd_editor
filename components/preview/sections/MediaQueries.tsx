@@ -17,7 +17,7 @@ export function MediaQueriesSection({ doc }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="13" kicker="Media queries" title="Responsive breakpoints" />
+      <SectionHeader index="19" kicker="Media queries" title="Responsive breakpoints" />
       <p className="text-[12px] mb-3" style={{ color: onSurfaceVar }}>
         Click a row to preview at that width. Edit values in the Breakpoints block.
       </p>

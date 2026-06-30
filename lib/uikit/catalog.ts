@@ -68,7 +68,7 @@ export const CATALOG: UikitCategory[] = [
           "Triggers an action on click or Enter/Space. While `loading` it shows a spinner, sets `aria-busy`, and ignores repeated activations until the async work resolves. Optional leading/trailing icons render inline with the label; when `disabled` it is non-interactive and skipped by the tab order.",
         states: ["default", "hover", "active", "focus-visible", "disabled", "loading"],
         params: [
-          p("variant", "'primary' | 'secondary' | 'ghost'", "Visual emphasis.", "'primary'"),
+          p("variant", "'primary' | 'secondary' | 'plain'", "Visual emphasis.", "'primary'"),
           p("size", "'sm' | 'md' | 'lg'", "Control height and padding scale.", "'md'"),
           p("disabled", "boolean", "Disables interaction.", "false"),
           p("loading", "boolean", "Shows a spinner and blocks clicks.", "false"),
@@ -96,7 +96,7 @@ export const CATALOG: UikitCategory[] = [
           p("icon", "ReactNode", "Icon to display.", "—"),
           p("label", "string", "Accessible name (aria-label). Required.", "—"),
           p("size", "'sm' | 'md' | 'lg'", "Button diameter.", "'md'"),
-          p("variant", "'filled' | 'ghost' | 'outline'", "Visual style.", "'ghost'"),
+          p("variant", "'filled' | 'plain' | 'outline'", "Visual style.", "'plain'"),
           p("disabled", "boolean", "Disables interaction.", "false"),
           p("onClick", "(e: MouseEvent) => void", "Activation handler."),
         ],

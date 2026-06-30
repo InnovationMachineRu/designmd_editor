@@ -23,7 +23,7 @@ export function ElevationSection({ doc, decor, mark }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="12" kicker="Elevation & shadow" title="Depth treatments" />
+      <SectionHeader index="18" kicker="Elevation & shadow" title="Depth treatments" />
       <div className="grid grid-cols-2 @md:grid-cols-3 @3xl:grid-cols-5 gap-3">
         {samples.map((s) => (
           <div

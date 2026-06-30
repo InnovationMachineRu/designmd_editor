@@ -31,7 +31,7 @@ export function ModalPreview({ doc }: PreviewProps) {
         <div style={{ fontWeight: 700, fontSize: 14, color: onSurface(doc) }}>Delete file?</div>
         <Caption doc={doc}>This action cannot be undone.</Caption>
         <Row gap={8} style={{ justifyContent: "flex-end" }}>
-          <TButton doc={doc} size="sm" variant="ghost">Cancel</TButton>
+          <TButton doc={doc} size="sm" variant="plain">Cancel</TButton>
           <TButton doc={doc} size="sm" variant="primary">Delete</TButton>
         </Row>
       </Stack>

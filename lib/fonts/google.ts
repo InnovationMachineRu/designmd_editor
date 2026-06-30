@@ -66,6 +66,9 @@ export const FONT_CATALOG: FontEntry[] = [
   { family: "Source Code Pro", category: "mono" },
   { family: "Space Mono", category: "mono" },
   { family: "Roboto Mono", category: "mono" },
+  { family: "Inconsolata", category: "mono" },
+  { family: "DM Mono", category: "mono" },
+  { family: "Ubuntu Mono", category: "mono" },
 ];
 
 const FAMILY_SET = new Set(FONT_CATALOG.map((f) => f.family));

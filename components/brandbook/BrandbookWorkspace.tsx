@@ -1,7 +1,8 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { useActiveSection } from "@/lib/useActiveSection";
 import { FontLoader } from "@/components/FontLoader";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
@@ -101,6 +102,12 @@ const SECTIONS: SectionDef[] = [
 ];
 
 export function BrandbookWorkspace() {
+  const panelsRef = useRef<HTMLDivElement>(null);
+  const activeId = useActiveSection(
+    SECTIONS.map((s) => `bb-${s.id}`),
+    panelsRef
+  );
+
   return (
     <div className="h-screen flex flex-col">
       <FontLoader />
@@ -127,21 +134,29 @@ export function BrandbookWorkspace() {
           {/* Sticky in-page section nav */}
           <nav className="w-36 shrink-0 border-r border-app-border p-3 overflow-auto scroll-thin hidden md:block">
             <ul className="space-y-0.5 sticky top-0">
-              {SECTIONS.map((s) => (
-                <li key={s.id}>
-                  <a
-                    href={`#bb-${s.id}`}
-                    className="block px-2 py-1.5 rounded-md text-xs text-app-muted hover:text-app-text hover:bg-app-panel-2 transition-colors"
-                  >
-                    {s.title}
-                  </a>
-                </li>
-              ))}
+              {SECTIONS.map((s) => {
+                const isActive = activeId === `bb-${s.id}`;
+                return (
+                  <li key={s.id}>
+                    <a
+                      href={`#bb-${s.id}`}
+                      aria-current={isActive ? "true" : undefined}
+                      className={`block px-2 py-1.5 rounded-md text-xs transition-colors ${
+                        isActive
+                          ? "text-app-text bg-app-panel-2 font-medium"
+                          : "text-app-muted hover:text-app-text hover:bg-app-panel-2"
+                      }`}
+                    >
+                      {s.title}
+                    </a>
+                  </li>
+                );
+              })}
             </ul>
           </nav>
 
           {/* Panels */}
-          <div className="min-h-0 flex-1 overflow-auto scroll-thin p-5 space-y-10">
+          <div ref={panelsRef} className="min-h-0 flex-1 overflow-auto scroll-thin p-5 space-y-10">
             {SECTIONS.map((s) => (
               <section key={s.id} id={`bb-${s.id}`} className="space-y-3 scroll-mt-4">
                 <div>

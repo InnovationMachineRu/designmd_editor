@@ -83,7 +83,7 @@ export interface ComponentStyleOpts {
   /** rounded scale name used by cards/inputs. */
   surfaceRadius: string;
   /** When set, cards/inputs use these literal translucent backgrounds (glass). */
-  glass?: { card: string; cardElevated: string; input: string; ghost: string };
+  glass?: { card: string; cardElevated: string; input: string; plain: string };
 }
 
 /**
@@ -115,8 +115,8 @@ export function standardComponents(
       height: "44px",
       padding: "0 24px",
     },
-    "button-ghost": {
-      backgroundColor: glass ? glass.ghost : "transparent",
+    "button-plain": {
+      backgroundColor: glass ? glass.plain : "transparent",
       textColor: "{colors.primary}",
       typography: "{typography.label-md}",
       rounded: `{rounded.${buttonRadius}}`,

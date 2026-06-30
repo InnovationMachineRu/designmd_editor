@@ -147,6 +147,24 @@ body::before {
   }
 }
 
+/* Scroll-reveal for the preview gallery sections. A section starts shifted +
+   transparent and animates in when it enters the viewport (the `is-in` class is
+   toggled by components/preview/Reveal.tsx via IntersectionObserver). The
+   duration/easing are driven by the Brandbook motion tokens (CSS custom props
+   set inline), with fallbacks. Honored under reduced-motion via the global rule
+   above. */
+.dmd-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity var(--dmd-motion-duration, 240ms) var(--dmd-motion-easing, ease),
+    transform var(--dmd-motion-duration, 240ms) var(--dmd-motion-easing, ease);
+  will-change: opacity, transform;
+}
+.dmd-reveal.is-in {
+  opacity: 1;
+  transform: none;
+}
+
 /* The preview surface consumes design-document tokens projected as
    CSS custom properties (see lib/designmd/tokens.ts). */
 .dmd-preview {

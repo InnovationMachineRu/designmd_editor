@@ -232,14 +232,14 @@ export function SnapshotSection({ doc, decor, mark }: SectionProps) {
               {/* Outlined — transparent with primary border + text */}
               <button
                 type="button"
-                {...mark({ group: "components", key: "button-ghost" })}
+                {...mark({ group: "components", key: "button-plain" })}
                 className="inline-flex items-center justify-center font-semibold"
                 style={{
                   ...outlinedBase,
                   background: "transparent",
                   color: color(doc, "primary"),
                   border: `1px solid ${color(doc, "primary")}`,
-                  ...mark({ group: "components", key: "button-ghost" }).style,
+                  ...mark({ group: "components", key: "button-plain" }).style,
                 }}
               >
                 Outlined

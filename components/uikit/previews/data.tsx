@@ -23,7 +23,7 @@ export function CardPreview({ doc }: PreviewProps) {
       <Stack gap={8}>
         <div style={{ fontWeight: 700, fontSize: 14, color: onSurface(doc) }}>Project Atlas</div>
         <Caption doc={doc}>A container that groups related content with a clear hierarchy.</Caption>
-        <Row gap={8}><TButton doc={doc} size="sm" variant="primary">Open</TButton><TButton doc={doc} size="sm" variant="ghost">Share</TButton></Row>
+        <Row gap={8}><TButton doc={doc} size="sm" variant="primary">Open</TButton><TButton doc={doc} size="sm" variant="plain">Share</TButton></Row>
       </Stack>
     </TSurface>
   );

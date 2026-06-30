@@ -20,7 +20,7 @@ export function SpacingScaleSection({ doc, mark }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="10" kicker="Spacing scale" title="Rhythm & density" />
+      <SectionHeader index="16" kicker="Spacing scale" title="Rhythm & density" />
       <div className="space-y-2">
         {entries.map((e) => (
           <div

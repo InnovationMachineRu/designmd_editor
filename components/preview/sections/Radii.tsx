@@ -15,7 +15,7 @@ export function RadiiSection({ doc, mark }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="11" kicker="Corner radii" title="Roundness scale" />
+      <SectionHeader index="17" kicker="Corner radii" title="Roundness scale" />
       <div className="grid grid-cols-3 sm:grid-cols-4 @2xl:grid-cols-6 gap-3">
         {entries.map((e) => (
           <div key={e.key} {...mark({ group: "rounded", key: e.key })} className="text-center">

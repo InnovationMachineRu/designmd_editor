@@ -15,7 +15,7 @@ export function ButtonPreview({ doc }: PreviewProps) {
     <Row>
       <TButton doc={doc} variant="primary">Primary</TButton>
       <TButton doc={doc} variant="secondary">Secondary</TButton>
-      <TButton doc={doc} variant="ghost">Ghost</TButton>
+      <TButton doc={doc} variant="plain">Plain</TButton>
     </Row>
   );
 }

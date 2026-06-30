@@ -8,6 +8,7 @@ import { SaveStyleDialog } from "./SaveStyleDialog";
 export function StylePicker() {
   const presetId = useEditor((s) => s.presetId);
   const applyPreset = useEditor((s) => s.applyPreset);
+  const applyBrandPreset = useEditor((s) => s.applyBrandPreset);
   const customPresets = useEditor((s) => s.customPresets);
   const deleteCustomPreset = useEditor((s) => s.deleteCustomPreset);
 
@@ -58,6 +59,19 @@ export function StylePicker() {
 
   return (
     <div className="relative flex flex-wrap items-center gap-2">
+      {/* Brand — a live style projected from the Brandbook (always first). */}
+      <button
+        type="button"
+        onClick={() => applyBrandPreset()}
+        title="Styles derived from your Brandbook"
+        className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-colors ${
+          presetId === "brand"
+            ? "border-app-accent bg-app-accent/15 text-app-text"
+            : "border-app-border text-app-muted hover:text-app-text hover:border-app-accent/60"
+        }`}
+      >
+        ✦ Brand
+      </button>
       {PRESET_LIST.map((p) => tab(p.id, p.label, p.description))}
       {custom.map((p) => tab(p.id, p.label, p.description, true))}
 

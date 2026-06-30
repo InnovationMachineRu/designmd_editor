@@ -26,7 +26,7 @@ export function BadgesSection({ doc, mark }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="09" kicker="Badges" title="Status & counts" />
+      <SectionHeader index="15" kicker="Badges" title="Status & counts" />
       <div className="flex flex-wrap items-center gap-2 mb-6">
         {pill({}, "Featured", { group: "components", key: "badge" })}
         {pill(

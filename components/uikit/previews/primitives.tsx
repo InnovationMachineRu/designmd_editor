@@ -28,7 +28,7 @@ export const radius = (doc: DesignDoc, scale = "lg", fallback = "12px") =>
 export const comp = (doc: DesignDoc, key: string): CSSProperties =>
   resolveComponent(doc, doc.components[key]);
 
-/** A small, token-styled button in primary / secondary / ghost variants. */
+/** A small, token-styled button in primary / secondary / plain variants. */
 export function TButton({
   doc,
   variant = "primary",
@@ -37,7 +37,7 @@ export function TButton({
   style,
 }: {
   doc: DesignDoc;
-  variant?: "primary" | "secondary" | "ghost";
+  variant?: "primary" | "secondary" | "plain";
   size?: "sm" | "md";
   children: ReactNode;
   style?: CSSProperties;
@@ -45,8 +45,8 @@ export function TButton({
   const key =
     variant === "secondary"
       ? "button-secondary"
-      : variant === "ghost"
-        ? "button-ghost"
+      : variant === "plain"
+        ? "button-plain"
         : "button-primary";
   const sizing =
     size === "sm"
@@ -63,7 +63,7 @@ export function TButton({
         cursor: "pointer",
         fontWeight: 600,
         whiteSpace: "nowrap",
-        border: variant === "ghost" ? `1px solid ${outlineVar(doc)}` : "none",
+        border: variant === "plain" ? `1px solid ${outlineVar(doc)}` : "none",
         ...comp(doc, key),
         ...sizing,
         ...style,

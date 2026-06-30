@@ -29,7 +29,7 @@ export function AccessibilitySection({ doc }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="15" kicker="Accessibility" title="Color contrast" />
+      <SectionHeader index="21" kicker="Accessibility" title="Color contrast" />
       <div className="rounded-lg overflow-hidden" style={hairline()}>
         {rows.map((r, i) => {
           const level = r.ratio !== null ? wcagLevel(r.ratio) : null;

@@ -5,6 +5,8 @@ import { useEditor } from "@/lib/store";
 import { resolveTypography } from "@/lib/designmd/tokens";
 import { type Decor } from "./decor";
 import { makeMark } from "./inspect";
+import { Reveal } from "./Reveal";
+import { motionOf } from "./sections/common";
 import { SnapshotSection } from "./sections/Snapshot";
 import { ColorPaletteSection } from "./sections/ColorPalette";
 import { TypographySection } from "./sections/Typography";
@@ -14,6 +16,12 @@ import { CalloutSection } from "./sections/Callout";
 import { TileGridSection } from "./sections/TileGrid";
 import { PricingSection } from "./sections/Pricing";
 import { FormsSection } from "./sections/Forms";
+import { VisualHierarchySection } from "./sections/VisualHierarchy";
+import { ColumnGridSection } from "./sections/ColumnGrid";
+import { IconsSection } from "./sections/Icons";
+import { LabelsSection } from "./sections/Labels";
+import { DividersSection } from "./sections/Dividers";
+import { AlertsSection } from "./sections/Alerts";
 import { BadgesSection } from "./sections/Badges";
 import { SpacingScaleSection } from "./sections/SpacingScale";
 import { RadiiSection } from "./sections/Radii";
@@ -33,6 +41,33 @@ export function Gallery({ doc, decor }: { doc: DesignDoc; decor: Decor }) {
   const mark = makeMark(highlight, setHighlight);
 
   const props = { doc, decor, mark };
+  const motion = motionOf(doc);
+
+  // Ordered documentation sections — each revealed on scroll in brand motion.
+  const SECTIONS = [
+    SnapshotSection,
+    ColorPaletteSection,
+    TypographySection,
+    ButtonsSection,
+    CardsSection,
+    CalloutSection,
+    TileGridSection,
+    PricingSection,
+    FormsSection,
+    VisualHierarchySection,
+    ColumnGridSection,
+    IconsSection,
+    LabelsSection,
+    DividersSection,
+    AlertsSection,
+    BadgesSection,
+    SpacingScaleSection,
+    RadiiSection,
+    ElevationSection,
+    MediaQueriesSection,
+    TouchTargetsSection,
+    AccessibilitySection,
+  ];
 
   return (
     <div>
@@ -56,22 +91,11 @@ export function Gallery({ doc, decor }: { doc: DesignDoc; decor: Decor }) {
         )}
       </header>
 
-      <SnapshotSection {...props} />
-      <ColorPaletteSection {...props} />
-      <TypographySection {...props} />
-      <ButtonsSection {...props} />
-      <CardsSection {...props} />
-      <CalloutSection {...props} />
-      <TileGridSection {...props} />
-      <PricingSection {...props} />
-      <FormsSection {...props} />
-      <BadgesSection {...props} />
-      <SpacingScaleSection {...props} />
-      <RadiiSection {...props} />
-      <ElevationSection {...props} />
-      <MediaQueriesSection {...props} />
-      <TouchTargetsSection {...props} />
-      <AccessibilitySection {...props} />
+      {SECTIONS.map((Section, i) => (
+        <Reveal key={Section.name || i} ms={motion.ms} easing={motion.easing}>
+          <Section {...props} />
+        </Reveal>
+      ))}
     </div>
   );
 }

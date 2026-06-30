@@ -6,7 +6,7 @@ import { LiveButton } from "./Buttons";
 import { Block, SectionHeader, darkSurface, type SectionProps } from "./common";
 
 const TIERS = [
-  { name: "Free", price: "$0", note: "per month", feature: "Core editing", cta: "button-ghost" },
+  { name: "Free", price: "$0", note: "per month", feature: "Core editing", cta: "button-plain" },
   { name: "Pro", price: "$20", note: "per month", feature: "Everything in Free, plus more", cta: "button-secondary" },
   { name: "Team", price: "$30", note: "per user", feature: "Shared workspaces", cta: "button-primary", highlight: true },
   { name: "Enterprise", price: "Custom", note: "contact us", feature: "SSO & support", cta: "button-secondary" },

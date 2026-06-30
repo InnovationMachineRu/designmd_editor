@@ -190,6 +190,8 @@ export interface EditorState {
 
   // --- preset / theme ---
   applyPreset: (id: string) => void;
+  /** Project the current brandbook onto the docs as the "Brand" style. */
+  applyBrandPreset: () => void;
   setTheme: (theme: ThemeMode) => void;
   loadDoc: (doc: DesignDoc) => void;
   importDoc: (doc: DesignDoc) => void;
@@ -358,6 +360,26 @@ export const useEditor = create<EditorState>()(
         },
       });
     },
+
+    applyBrandPreset: () =>
+      set((s) => {
+        const bb = s.brandbook;
+        const unit =
+          bb.spacing?.density === "compact"
+            ? 4
+            : bb.spacing?.density === "spacious"
+              ? 12
+              : 8;
+        const roundness = bb.shape?.roundness ?? 1;
+        // Project brand colors + fonts, then brand shape (roundness) + density.
+        const project = (d: DesignDoc): DesignDoc =>
+          applySpacing(applyRoundness(applyBrandToDoc(d, bb), roundness), unit);
+        return {
+          presetId: "brand",
+          brandbook: bb,
+          docs: { light: project(s.docs.light), dark: project(s.docs.dark) },
+        };
+      }),
 
     importDoc: (incoming) =>
       set((s) => {

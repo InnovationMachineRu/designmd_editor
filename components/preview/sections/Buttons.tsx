@@ -5,7 +5,7 @@ import type { DesignDoc } from "@/lib/designmd/types";
 import { resolveComponent } from "@/lib/designmd/tokens";
 import type { Decor } from "../decor";
 import type { Marker } from "../inspect";
-import { Block, SectionHeader, darkSurface, type SectionProps } from "./common";
+import { Block, SectionHeader, darkSurface, motionOf, type SectionProps } from "./common";
 
 /**
  * A real, clickable preview button: hover + active (pressed) + focus states.
@@ -33,6 +33,7 @@ export function LiveButton({
   const style = resolveComponent(doc, doc.components[base]);
   const hoverStyle = hover ? resolveComponent(doc, doc.components[hover]) : {};
   const m = mark({ group: "components", key: base });
+  const { ms, easing } = motionOf(doc);
 
   return (
     <button
@@ -52,7 +53,7 @@ export function LiveButton({
         justifyContent: "center",
         cursor: disabled ? "not-allowed" : "pointer",
         opacity: disabled ? 0.45 : 1,
-        transition: "background 0.15s ease, box-shadow 0.12s ease, transform 0.06s ease",
+        transition: `background ${ms}ms ${easing}, box-shadow ${ms}ms ${easing}, transform 60ms ${easing}`,
         ...style,
         ...decorExtra,
         ...(over && !disabled ? hoverStyle : {}),
@@ -69,12 +70,12 @@ export function ButtonsSection({ doc, decor, mark }: SectionProps) {
   const dark = darkSurface(doc);
   return (
     <Block>
-      <SectionHeader index="03" kicker="Button variants" title="Primary, secondary, ghost" />
+      <SectionHeader index="03" kicker="Button variants" title="Primary, secondary, plain" />
       <div className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
           <LiveButton doc={doc} base="button-primary" hover="button-primary-hover" label="Primary" decorExtra={decor.button} mark={mark} />
           <LiveButton doc={doc} base="button-secondary" label="Secondary" decorExtra={decor.button} mark={mark} />
-          <LiveButton doc={doc} base="button-ghost" label="Ghost" mark={mark} />
+          <LiveButton doc={doc} base="button-plain" label="Plain" mark={mark} />
           <LiveButton doc={doc} base="button-primary" label="Disabled" disabled mark={mark} />
         </div>
 
@@ -85,7 +86,7 @@ export function ButtonsSection({ doc, decor, mark }: SectionProps) {
         >
           <span className="text-xs opacity-60 w-full">On dark surface</span>
           <LiveButton doc={doc} base="button-primary" hover="button-primary-hover" label="Primary" decorExtra={decor.button} mark={mark} />
-          <LiveButton doc={doc} base="button-ghost" label="Ghost" mark={mark} />
+          <LiveButton doc={doc} base="button-plain" label="Plain" mark={mark} />
         </div>
       </div>
     </Block>

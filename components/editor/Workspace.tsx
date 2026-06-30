@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useEditor } from "@/lib/store";
-import { saveDesign, validateDesign } from "@/lib/api";
+import { validateDesign } from "@/lib/api";
 import type { LintResult } from "@/lib/designmd/types";
 import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
 import { Stepper } from "@/components/wizard/Stepper";
@@ -18,28 +18,12 @@ export function Workspace() {
   const doc = useEditor((s) => s.docs[s.theme]);
   const settingsCollapsed = useEditor((s) => s.settingsCollapsed);
   const fullscreen = useEditor((s) => s.previewFullscreen);
-  const [busy, setBusy] = useState<"save" | "validate" | null>(null);
+  const [busy, setBusy] = useState<"validate" | null>(null);
   const [lint, setLint] = useState<LintResult | null>(null);
-  const [savedPath, setSavedPath] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const onSave = async () => {
-    setBusy("save");
-    setError(null);
-    try {
-      const res = await saveDesign(doc);
-      setLint(res.lint);
-      setSavedPath(res.path);
-      setContent(res.content);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(null);
-    }
-  };
 
   const onValidate = async () => {
     setBusy("validate");
@@ -48,7 +32,6 @@ export function Workspace() {
       const res = await validateDesign(doc);
       setLint(res.lint);
       setContent(res.content);
-      setSavedPath(null);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -74,12 +57,12 @@ export function Workspace() {
           <button className={btnGhostCls} onClick={() => setShowImport(true)} disabled={busy !== null}>
             Import
           </button>
-          <button className={btnGhostCls} onClick={onValidate} disabled={busy !== null}>
+          <button className={btnPrimaryCls} onClick={onValidate} disabled={busy !== null}>
             {busy === "validate" ? "Validating…" : "Validate"}
           </button>
-          <button className={btnPrimaryCls} onClick={onSave} disabled={busy !== null}>
-            {busy === "save" ? "Saving…" : "Save DESIGN.md"}
-          </button>
+          <Link href="/uikit" className="text-sm text-app-accent hover:underline font-medium ml-1">
+            Next: UIKit →
+          </Link>
         </div>
       </header>
 
@@ -115,17 +98,14 @@ export function Workspace() {
           {error && (
             <div className="text-xs text-app-danger mb-2">Error: {error}</div>
           )}
-          {savedPath && (
-            <div className="text-xs text-app-ok mb-2 flex items-center gap-2 flex-wrap">
-              ✓ Saved to <code className="font-mono">{savedPath}</code>
-              {content && (
-                <button
-                  className="text-app-accent hover:underline"
-                  onClick={() => setShowCode(true)}
-                >
-                  View file
-                </button>
-              )}
+          {content && (
+            <div className="text-xs text-app-muted mb-2 flex items-center gap-2 flex-wrap">
+              <button
+                className="text-app-accent hover:underline"
+                onClick={() => setShowCode(true)}
+              >
+                View DESIGN.md
+              </button>
               <Link href="/uikit" className="text-app-accent hover:underline ml-auto font-medium">
                 Next: choose UIKit components →
               </Link>

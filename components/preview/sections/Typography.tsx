@@ -54,6 +54,7 @@ function Sub({ children }: { children: ReactNode }) {
 
 export function TypographySection({ doc, mark }: SectionProps) {
   const family = primaryFamily(doc.typography);
+  const mono = doc.brandbook?.fonts.mono;
   const headingKey =
     ["display-lg", "headline-lg", "headline-md"].find((k) => doc.typography[k]) ??
     Object.keys(doc.typography)[0];
@@ -93,6 +94,23 @@ export function TypographySection({ doc, mark }: SectionProps) {
           <div className="mt-3 opacity-80" style={{ ...bodyStyle }}>
             The quick brown fox jumps over the lazy dog. 0123456789
           </div>
+        </div>
+      </div>
+
+      {/* Mono — the Brandbook's monospace family, for code & tabular data */}
+      <div className="mb-8">
+        <Sub>Mono · code</Sub>
+        <div className="rounded-xl p-5" style={{ ...hairline() }}>
+          <div className="text-[11px] opacity-50 mb-2 font-mono">
+            {mono ?? "ui-monospace"} · monospace
+          </div>
+          <pre
+            className="text-sm overflow-x-auto scroll-thin"
+            style={{ fontFamily: mono ?? "ui-monospace, SFMono-Regular, Menlo, monospace", lineHeight: 1.6 }}
+          >
+{`const theme = { primary: "#6750A4" };
+0123456789  ()[]{}  ->  =>  !==  <=`}
+          </pre>
         </div>
       </div>
 

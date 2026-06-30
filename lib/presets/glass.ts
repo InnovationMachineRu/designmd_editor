@@ -22,13 +22,13 @@ const darkGlass = {
   card: "rgba(255, 255, 255, 0.10)",
   cardElevated: "rgba(255, 255, 255, 0.20)",
   input: "rgba(255, 255, 255, 0.10)",
-  ghost: "rgba(255, 255, 255, 0.05)",
+  plain: "rgba(255, 255, 255, 0.05)",
 };
 const lightGlass = {
   card: "rgba(255, 255, 255, 0.60)",
   cardElevated: "rgba(255, 255, 255, 0.85)",
   input: "rgba(255, 255, 255, 0.55)",
-  ghost: "rgba(15, 23, 42, 0.04)",
+  plain: "rgba(15, 23, 42, 0.04)",
 };
 
 const components = standardComponents({

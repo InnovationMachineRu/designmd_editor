@@ -17,7 +17,7 @@ export function TouchTargetsSection({ doc, mark }: SectionProps) {
 
   return (
     <Block>
-      <SectionHeader index="14" kicker="Touch targets" title="Hit areas & spacing" />
+      <SectionHeader index="20" kicker="Touch targets" title="Hit areas & spacing" />
       <div className="flex flex-wrap items-end gap-6">
         {TARGETS.map((t) => (
           <div key={t.size} className="text-center">

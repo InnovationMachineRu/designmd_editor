@@ -108,5 +108,13 @@ export function hairline(): CSSProperties {
   };
 }
 
+/** Brand motion tokens (duration in ms + easing) with sane fallbacks. */
+export function motionOf(doc: DesignDoc): { ms: number; easing: string } {
+  return {
+    ms: doc.brandbook?.motion?.duration ?? 200,
+    easing: doc.brandbook?.motion?.easing ?? "cubic-bezier(0.4, 0, 0.2, 1)",
+  };
+}
+
 /** Resolve a component token style merged with optional decor extras. */
 export { color };
