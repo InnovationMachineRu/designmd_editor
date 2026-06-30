@@ -143,6 +143,12 @@ export interface DesignDoc {
   spacing: Record<string, DimensionValue | number>;
   components: Record<string, ComponentToken>;
   sections: Sections;
+  /**
+   * Per-section "auto-generate" flags. `true`/undefined = auto-generated from
+   * tokens + selected components; `false` = the text in `sections` is manual.
+   * Stored in x-design-md.
+   */
+  sectionsAuto?: Partial<Record<CanonicalSection, boolean>>;
   /** Writing direction; defaults to "ltr" when omitted. Stored in x-design-md. */
   direction?: Direction;
   /** Writing flow; defaults to "horizontal" when omitted. Stored in x-design-md. */
@@ -151,6 +157,35 @@ export interface DesignDoc {
   breakpoints?: Record<string, number>;
   /** Brand definition driving the tokens. Stored in x-design-md. */
   brandbook?: BrandbookData;
+  /** Selected UIKit components (export snapshot). Stored in x-design-md. */
+  uikit?: UikitSnapshot;
+  /** Selected layouts (export snapshot). Stored in x-design-md. */
+  layouts?: LayoutsSnapshot;
+}
+
+/** Snapshot of the chosen UIKit components, embedded in the exported YAML. */
+export interface UikitSnapshot {
+  /** Target technology the kit is generated for. */
+  tech?: string;
+  /** Selected components keyed by id, with the fields useful for an LLM/dev. */
+  components: Record<
+    string,
+    { name: string; states: string[]; tokenRoles: string[]; a11y: string[] }
+  >;
+}
+
+/** Snapshot of the chosen layouts, embedded in the exported YAML. */
+export interface LayoutsSnapshot {
+  /** Selected layouts keyed by id. */
+  items: Record<
+    string,
+    {
+      name: string;
+      kind: "page" | "component";
+      regions: string[];
+      responsive: string;
+    }
+  >;
 }
 
 /** Fallback breakpoints when a document defines none. */

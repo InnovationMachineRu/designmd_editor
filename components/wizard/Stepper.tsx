@@ -5,15 +5,16 @@ import Link from "next/link";
 const STEPS = [
   { n: 1, label: "Brandbook", href: "/brandbook" },
   { n: 2, label: "Design system", href: "/" },
-  { n: 3, label: "UIKit components", href: "/uikit" },
-  { n: 4, label: "Export", href: "/export" },
+  { n: 3, label: "UIKit", href: "/uikit" },
+  { n: 4, label: "Layouts", href: "/layouts" },
+  { n: 5, label: "Export", href: "/export" },
 ];
 
 /**
  * Top-level navigation as a segmented control. The active segment lifts onto a
  * raised panel with a brass underline — the one lit indicator in the chrome.
  */
-export function Stepper({ current }: { current: 1 | 2 | 3 | 4 }) {
+export function Stepper({ current }: { current: 1 | 2 | 3 | 4 | 5 }) {
   return (
     <nav className="flex items-center gap-1 p-1 rounded-xl border border-app-border bg-app-panel-2/40">
       {STEPS.map((s) => {

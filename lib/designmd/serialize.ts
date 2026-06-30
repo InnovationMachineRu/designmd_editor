@@ -49,7 +49,12 @@ function frontMatterObject(doc: DesignDoc): Record<string, unknown> {
     ext.writingMode = doc.writingMode;
   if (doc.breakpoints && Object.keys(doc.breakpoints).length)
     ext.breakpoints = doc.breakpoints;
+  if (doc.sectionsAuto && Object.keys(doc.sectionsAuto).length)
+    ext.sectionsAuto = doc.sectionsAuto;
   if (doc.brandbook) ext.brandbook = doc.brandbook;
+  if (doc.uikit && Object.keys(doc.uikit.components).length) ext.uikit = doc.uikit;
+  if (doc.layouts && Object.keys(doc.layouts.items).length)
+    ext.layouts = doc.layouts;
   if (Object.keys(ext).length) fm["x-design-md"] = ext;
 
   return fm;

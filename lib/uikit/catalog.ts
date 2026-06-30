@@ -896,3 +896,32 @@ export const TARGET_TECHS: TargetTech[] = [
   { id: "angular", label: "Angular", note: "Standalone components with signals." },
   { id: "svelte", label: "Svelte 5", note: "Runes-based components." },
 ];
+
+/** YAML snapshot of the selected UIKit components, stored under x-design-md.uikit. */
+export function uikitYaml(
+  ids: string[],
+  tech?: string
+): {
+  tech?: string;
+  components: Record<
+    string,
+    { name: string; states: string[]; tokenRoles: string[]; a11y: string[] }
+  >;
+} {
+  const components: Record<
+    string,
+    { name: string; states: string[]; tokenRoles: string[]; a11y: string[] }
+  > = {};
+  for (const id of ids) {
+    const c = getComponent(id);
+    if (c) {
+      components[id] = {
+        name: c.name,
+        states: c.states,
+        tokenRoles: c.tokenRoles,
+        a11y: c.a11y,
+      };
+    }
+  }
+  return { ...(tech ? { tech } : {}), components };
+}

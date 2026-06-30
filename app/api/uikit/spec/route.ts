@@ -11,6 +11,7 @@ interface Body {
   doc: DesignDoc;
   tech: string;
   components: string[];
+  layouts?: string[];
 }
 
 /** Generate the UIKit ТЗ and write it to UIKIT-SPEC.md. */
@@ -29,6 +30,7 @@ export async function POST(req: Request) {
     doc: body.doc,
     tech: body.tech ?? "react",
     components: body.components,
+    layouts: Array.isArray(body.layouts) ? body.layouts : [],
   });
   const filePath = uikitSpecPath();
 

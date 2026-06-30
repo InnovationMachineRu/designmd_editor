@@ -1,6 +1,7 @@
-import type { DesignDoc } from "../designmd/types";
+import { DEFAULT_BREAKPOINTS, type DesignDoc } from "../designmd/types";
 import { serializeDesignDoc } from "../designmd/serialize";
-import { getComponent, TARGET_TECHS } from "./catalog";
+import { getComponent, TARGET_TECHS, uikitYaml } from "./catalog";
+import { getLayout, layoutsYaml } from "../layouts/catalog";
 
 /** Tech-specific guidance for consuming the design tokens. */
 const TECH_GUIDANCE: Record<string, string> = {
@@ -87,6 +88,83 @@ function componentSpec(id: string): string {
   return lines.join("\n");
 }
 
+function layoutSpec(id: string): string {
+  const l = getLayout(id);
+  if (!l) return "";
+  const lines: string[] = [];
+  lines.push(`### ${l.name} \`${l.kind}\``);
+  lines.push("");
+  lines.push(l.description);
+  lines.push("");
+  lines.push(`- **Regions:** ${l.regions.map((r) => `\`${r}\``).join(", ")}`);
+  lines.push(`- **Structure:** ${l.structure}`);
+  lines.push(`- **Responsive:** ${l.responsive}`);
+  lines.push(
+    `- **Token bindings:** ${l.tokenRoles.map((t) => `\`{…${t}}\``).join(", ")}`
+  );
+  lines.push(`- **Accessibility:** ${l.a11y.join("; ")}`);
+  lines.push(`- **Best for:** ${l.bestFor}`);
+  lines.push("");
+  return lines.join("\n");
+}
+
+/**
+ * Generate the responsive media-query ruleset from the document's breakpoints
+ * (or the defaults). This is the contract for HOW components and layouts adapt
+ * across screen sizes — mobile-first, min-width ascending.
+ */
+export function mediaQueryRules(doc: DesignDoc): string {
+  const bp = doc.breakpoints && Object.keys(doc.breakpoints).length
+    ? doc.breakpoints
+    : DEFAULT_BREAKPOINTS;
+  const ordered = Object.entries(bp).sort((a, b) => a[1] - b[1]);
+
+  const lines: string[] = [];
+  lines.push(
+    "Author responsive CSS **mobile-first**: write the base (smallest-screen) styles " +
+      "unconditionally, then layer enhancements at each breakpoint with ascending " +
+      "`min-width` queries. Never start from desktop and walk down with `max-width`."
+  );
+  lines.push("");
+  lines.push("**Rules**");
+  lines.push("");
+  lines.push("- Base styles target the smallest viewport — no media query.");
+  lines.push("- Each breakpoint is a `min-width` query; they stack and override in ascending order.");
+  lines.push("- Use the named breakpoints below; do not hard-code arbitrary pixel values.");
+  lines.push("- Prefer fluid techniques (flex/grid `auto-fit`, `clamp()`, `%`/`fr` units) so fewer breakpoints are needed.");
+  lines.push("- Use a `max-width` or range query **only** for a style that must apply to a single band exclusively.");
+  lines.push("- Respect `prefers-reduced-motion` and `prefers-color-scheme` alongside width queries.");
+  lines.push("");
+  lines.push("**Breakpoints**");
+  lines.push("");
+  lines.push(
+    table(
+      ["Name", "Min width", "Media query"],
+      ordered.map(([name, px]) => [
+        `\`${name}\``,
+        `${px}px`,
+        `\`@media (min-width: ${px}px)\``,
+      ])
+    )
+  );
+  lines.push("");
+  lines.push("**Template**");
+  lines.push("");
+  lines.push("```css");
+  lines.push("/* Base — mobile first, no query */");
+  lines.push(".layout { display: grid; grid-template-columns: 1fr; gap: var(--spacing-unit); }");
+  for (const [name, px] of ordered) {
+    lines.push("");
+    lines.push(`/* ≥ ${name} */`);
+    lines.push(`@media (min-width: ${px}px) {`);
+    lines.push("  .layout { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }");
+    lines.push("}");
+  }
+  lines.push("```");
+  lines.push("");
+  return lines.join("\n");
+}
+
 /**
  * Generate the UIKit technical spec (ТЗ) as a **DESIGN.md-compatible** document:
  * a valid design.md (YAML front-matter tokens + canonical body) produced by
@@ -98,16 +176,26 @@ export function generateSpec(opts: {
   doc: DesignDoc;
   tech: string;
   components: string[];
+  layouts?: string[];
 }): string {
-  const { doc, tech, components } = opts;
+  const { doc, tech, components, layouts = [] } = opts;
   const techMeta = TARGET_TECHS.find((t) => t.id === tech);
   const techLabel = techMeta?.label ?? tech;
   const guidance = TECH_GUIDANCE[tech] ?? "- Consume design tokens via CSS custom properties.";
 
   const selected = components.filter((id) => getComponent(id));
+  const selectedLayouts = layouts.filter((id) => getLayout(id));
+
+  // Stamp the selected components & layouts into the YAML front-matter so the
+  // generated DESIGN.md carries them under x-design-md (selected-only).
+  const docForExport: DesignDoc = {
+    ...doc,
+    uikit: uikitYaml(selected, tech),
+    layouts: layoutsYaml(selectedLayouts),
+  };
 
   // Base document: a valid DESIGN.md (front-matter tokens + canonical body).
-  const md: string[] = [serializeDesignDoc(doc).trimEnd(), ""];
+  const md: string[] = [serializeDesignDoc(docForExport).trimEnd(), ""];
 
   // UIKit ТЗ appended as additional body sections — keeps the file a valid
   // design.md while documenting the component contract.
@@ -150,6 +238,27 @@ export function generateSpec(opts: {
     for (const id of selected) md.push(componentSpec(id));
   }
 
+  // Layouts — page-level and complex-component compositions to implement.
+  md.push("## Layouts");
+  md.push("");
+  md.push(
+    "These layouts arrange the components above into pages and complex compositions. " +
+      "Each specifies its regions, structure, responsive behavior, and token bindings. " +
+      "Implement every layout to spec, driving all responsiveness from the rules below."
+  );
+  md.push("");
+  if (selectedLayouts.length === 0) {
+    md.push("_No layouts selected._");
+    md.push("");
+  } else {
+    for (const id of selectedLayouts) md.push(layoutSpec(id));
+  }
+
+  // Responsive contract — how everything adapts across breakpoints.
+  md.push("## Responsive — Media query rules");
+  md.push("");
+  md.push(mediaQueryRules(docForExport));
+
   md.push("## UIKit — Acceptance criteria");
   md.push("");
   md.push("- [ ] Every component implements all listed states with token-bound styling.");
@@ -160,6 +269,8 @@ export function generateSpec(opts: {
   md.push("- [ ] Accessibility requirements per component are met (roles, focus, keyboard).");
   md.push("- [ ] Light and dark palettes are supported via the token layer.");
   md.push("- [ ] A demo page renders each component in all states.");
+  md.push("- [ ] Every layout implements its documented regions and responsive behavior.");
+  md.push("- [ ] All responsiveness is mobile-first and uses the named breakpoints (min-width).");
   md.push("");
 
   return md.join("\n").trimEnd() + "\n";

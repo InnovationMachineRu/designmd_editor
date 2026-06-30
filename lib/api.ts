@@ -39,6 +39,7 @@ export async function generateUikitSpec(payload: {
   doc: DesignDoc;
   tech: string;
   components: string[];
+  layouts?: string[];
 }): Promise<UikitSpecResponse> {
   const res = await fetch("/api/uikit/spec", {
     method: "POST",

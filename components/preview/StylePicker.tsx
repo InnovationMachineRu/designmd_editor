@@ -11,6 +11,8 @@ export function StylePicker() {
   const applyBrandPreset = useEditor((s) => s.applyBrandPreset);
   const customPresets = useEditor((s) => s.customPresets);
   const deleteCustomPreset = useEditor((s) => s.deleteCustomPreset);
+  const styleOverrides = useEditor((s) => s.styleOverrides);
+  const resetStyle = useEditor((s) => s.resetStyle);
 
   const [open, setOpen] = useState(false);
   // Guard against SSR/client mismatch: custom styles come from localStorage.
@@ -18,6 +20,8 @@ export function StylePicker() {
   useEffect(() => setMounted(true), []);
 
   const custom = mounted ? Object.values(customPresets) : [];
+  // Only meaningful after mount (overrides come from localStorage).
+  const hasOverride = mounted && !!styleOverrides[presetId];
 
   const tab = (
     id: string,
@@ -83,6 +87,31 @@ export function StylePicker() {
       >
         ＋ Style
       </button>
+
+      {/* Save the current edits as a new named style — only when this style has
+          unsaved changes. */}
+      {hasOverride && (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          title="Save the current tokens as a new named style"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-app-border text-app-muted hover:text-app-text hover:border-app-accent transition-colors"
+        >
+          Save Style
+        </button>
+      )}
+
+      {/* Discard this style's saved edits → pristine. Only when overrides exist. */}
+      {hasOverride && (
+        <button
+          type="button"
+          onClick={() => resetStyle()}
+          title="Reset this style to its defaults (discard saved edits)"
+          className="px-2.5 py-1.5 rounded-lg text-xs font-medium border border-app-border text-app-muted hover:text-app-danger hover:border-app-danger/60 transition-colors"
+        >
+          Reset Style
+        </button>
+      )}
 
       {open && <SaveStyleDialog onClose={() => setOpen(false)} />}
     </div>

@@ -3,7 +3,7 @@
 import { useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { useActiveSection } from "@/lib/useActiveSection";
-import { FontLoader } from "@/components/FontLoader";
+import { APP_VERSION } from "@/lib/version";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { PreviewPane } from "@/components/preview/PreviewPane";
@@ -110,13 +110,15 @@ export function BrandbookWorkspace() {
 
   return (
     <div className="h-screen flex flex-col">
-      <FontLoader />
       {/* Top bar */}
       <header className="flex items-center gap-4 px-5 h-16 border-b border-app-border shrink-0">
         <div className="font-display font-semibold text-[15px] tracking-tight text-app-text shrink-0">
           DESIGN<span className="text-app-accent">.md</span>
           <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
             Brandbook
+          </span>
+          <span className="text-app-muted/70 font-sans font-normal text-[10px] ml-1.5 align-middle tabular-nums">
+            v{APP_VERSION}
           </span>
         </div>
         <div className="flex-1 flex justify-center">
@@ -170,7 +172,7 @@ export function BrandbookWorkspace() {
         </div>
 
         <div className="min-h-0 p-4">
-          <PreviewPane enableFonts />
+          <PreviewPane />
         </div>
       </div>
     </div>

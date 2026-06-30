@@ -1,4 +1,5 @@
 import { resolveValue } from "./tokens";
+import { brandGradients } from "./color";
 import type { DesignDoc, TypographyToken } from "./types";
 
 function sanitizeName(name: string): string {
@@ -7,6 +8,33 @@ function sanitizeName(name: string): string {
     .replace(/[^a-zA-Z0-9_-]/g, "-")
     .replace(/-{2,}/g, "-")
     .replace(/^-+|-+$/g, "");
+}
+
+/** camelCase → kebab-case for component prop names. */
+function kebab(s: string): string {
+  return s.replace(/([a-z0-9])([A-Z])/g, "$1-$2").toLowerCase();
+}
+
+/** Resolved scalar component-token props as [name, prop, value]. */
+function componentEntries(doc: DesignDoc): Array<[string, string, string]> {
+  const out: Array<[string, string, string]> = [];
+  for (const [name, token] of Object.entries(doc.components)) {
+    for (const [prop, raw] of Object.entries(token)) {
+      if (prop === "typography") continue; // typography refs are objects, skip
+      const resolved = resolveValue(doc, raw as string);
+      if (resolved) out.push([name, prop, resolved]);
+    }
+  }
+  return out;
+}
+
+/** Brand gradients as [label, css] from the brandbook scheme (empty if none). */
+function gradientEntries(doc: DesignDoc): Array<[string, string]> {
+  const bb = doc.brandbook;
+  if (!bb?.schemeColors?.length) return [];
+  return brandGradients(bb.schemeColors, bb.gradients?.angle ?? 135).map(
+    (g) => [g.label, g.css] as [string, string]
+  );
 }
 
 const TYPO_PROPS: Array<[keyof TypographyToken, string]> = [
@@ -70,6 +98,22 @@ export function docToCssVarsBlock(doc: DesignDoc): string {
   }
   appendGroup("Typography", typoVars);
 
+  const componentVars = componentEntries(doc).map(
+    ([name, prop, val]) =>
+      `  --ds-component-${sanitizeName(name)}-${kebab(prop)}: ${val};`
+  );
+  appendGroup("Components", componentVars);
+
+  const gradientVars = gradientEntries(doc).map(
+    ([label, css]) => `  --ds-gradient-${sanitizeName(label)}: ${css};`
+  );
+  appendGroup("Gradients", gradientVars);
+
+  const fontVars: string[] = [];
+  if (doc.brandbook?.fonts.mono)
+    fontVars.push(`  --ds-font-mono: ${doc.brandbook.fonts.mono};`);
+  appendGroup("Fonts", fontVars);
+
   return `:root {\n${body.join("\n")}\n}`;
 }
 
@@ -112,9 +156,23 @@ export function docToTailwindTheme(doc: DesignDoc): string {
     if (token.fontSize) typoVars.push(`  --text-${n}: ${token.fontSize};`);
     if (token.fontWeight) typoVars.push(`  --font-weight-${n}: ${token.fontWeight};`);
   }
+  if (doc.brandbook?.fonts.mono)
+    typoVars.push(`  --font-mono: ${doc.brandbook.fonts.mono};`);
   appendGroup("Typography", typoVars);
 
-  return `@theme {\n${body.join("\n")}\n}`;
+  const gradientVars = gradientEntries(doc).map(
+    ([label, css]) => `  --gradient-${sanitizeName(label)}: ${css};`
+  );
+  appendGroup("Gradients", gradientVars);
+
+  const themeBlock = `@theme {\n${body.join("\n")}\n}`;
+
+  // Component tokens aren't @theme scale tokens → emit as a plain :root block.
+  const componentVars = componentEntries(doc).map(
+    ([name, prop, val]) => `  --component-${sanitizeName(name)}-${kebab(prop)}: ${val};`
+  );
+  if (!componentVars.length) return themeBlock;
+  return `${themeBlock}\n\n/* Component tokens */\n:root {\n${componentVars.join("\n")}\n}`;
 }
 
 /** Build a W3C DTCG-compliant design tokens JSON string. */
@@ -171,6 +229,36 @@ export function docToDesignTokensJson(doc: DesignDoc): string {
     }
   }
   if (hasTypography) root.typography = typographyTokens;
+
+  const componentTokens: Record<string, unknown> = {};
+  let hasComponents = false;
+  for (const [name, token] of Object.entries(doc.components)) {
+    const props: Record<string, string> = {};
+    for (const [prop, raw] of Object.entries(token)) {
+      if (prop === "typography") continue;
+      const resolved = resolveValue(doc, raw as string);
+      if (resolved) props[prop] = resolved;
+    }
+    if (Object.keys(props).length) {
+      componentTokens[name] = props;
+      hasComponents = true;
+    }
+  }
+  if (hasComponents) root.component = componentTokens;
+
+  const grads = gradientEntries(doc);
+  if (grads.length) {
+    const gradientTokens: Record<string, unknown> = { $type: "gradient" };
+    for (const [label, css] of grads) gradientTokens[label] = { $value: css };
+    root.gradient = gradientTokens;
+  }
+
+  if (doc.brandbook?.fonts.mono) {
+    root.font = {
+      $type: "fontFamily",
+      mono: { $value: doc.brandbook.fonts.mono, $type: "fontFamily" },
+    };
+  }
 
   return JSON.stringify(root, null, 2);
 }

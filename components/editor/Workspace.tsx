@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEditor } from "@/lib/store";
 import { validateDesign } from "@/lib/api";
 import type { LintResult } from "@/lib/designmd/types";
+import { APP_VERSION } from "@/lib/version";
 import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
@@ -47,6 +48,9 @@ export function Workspace() {
           DESIGN<span className="text-app-accent">.md</span>
           <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
             token editor
+          </span>
+          <span className="text-app-muted/70 font-sans font-normal text-[10px] ml-1.5 align-middle tabular-nums">
+            v{APP_VERSION}
           </span>
         </div>
         <div className="flex-1 flex justify-center">
@@ -107,7 +111,7 @@ export function Workspace() {
                 View DESIGN.md
               </button>
               <Link href="/uikit" className="text-app-accent hover:underline ml-auto font-medium">
-                Next: choose UIKit components →
+                Next: choose UIKit →
               </Link>
             </div>
           )}

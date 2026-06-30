@@ -3,10 +3,12 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import { DEFAULT_SELECTION } from "./uikit/catalog";
+import { DEFAULT_LAYOUT_SELECTION } from "./layouts/catalog";
 import {
   DEFAULT_BREAKPOINTS,
   type BrandbookData,
   type BrandLogo,
+  type CanonicalSection,
   type ComponentProp,
   type ComponentToken,
   type DecorKind,
@@ -20,6 +22,7 @@ import {
   type WritingMode,
 } from "./designmd/types";
 import { harmony, onColorFor, shade } from "./designmd/color";
+import { regenAutoSections } from "./designmd/rationale";
 import { PRESETS } from "./presets";
 import { blankDocs } from "./presets/blank";
 
@@ -175,6 +178,13 @@ export interface EditorState {
   /** User-created styles, persisted to localStorage. */
   customPresets: Record<string, StylePreset>;
 
+  /**
+   * Per-style token edits, persisted to localStorage keyed by `presetId`. When a
+   * style with an override is (re)selected or rehydrated, its saved docs are
+   * loaded instead of the pristine preset. Cleared by `resetStyle()`.
+   */
+  styleOverrides: Record<string, { light: DesignDoc; dark: DesignDoc }>;
+
   /** Token selected in the live preview to highlight in the editor. */
   highlight: HighlightTarget | null;
 
@@ -185,6 +195,9 @@ export interface EditorState {
   selectedComponents: string[];
   targetTech: string;
 
+  // Layouts step state
+  selectedLayouts: string[];
+
   // --- selectors ---
   active: () => DesignDoc;
 
@@ -192,6 +205,8 @@ export interface EditorState {
   applyPreset: (id: string) => void;
   /** Project the current brandbook onto the docs as the "Brand" style. */
   applyBrandPreset: () => void;
+  /** Discard the active style's saved overrides → back to the pristine style. */
+  resetStyle: () => void;
   setTheme: (theme: ThemeMode) => void;
   loadDoc: (doc: DesignDoc) => void;
   importDoc: (doc: DesignDoc) => void;
@@ -270,11 +285,17 @@ export interface EditorState {
 
   // --- sections ---
   setSection: (name: string, text: string) => void;
+  /** Toggle a rationale section between auto-generated and manual. */
+  setSectionAuto: (name: CanonicalSection, auto: boolean) => void;
 
   // --- uikit ---
   toggleComponent: (id: string) => void;
   setSelectedComponents: (ids: string[]) => void;
   setTargetTech: (tech: string) => void;
+
+  // --- layouts ---
+  toggleLayout: (id: string) => void;
+  setSelectedLayouts: (ids: string[]) => void;
 
   // --- preview UI (ephemeral, not persisted) ---
   settingsCollapsed: boolean;
@@ -301,11 +322,35 @@ const initialBrandbook = brandbookFromDoc(initialDocs.light);
 export const useEditor = create<EditorState>()(
   persist(
     (set, get) => {
+  /**
+   * Commit new docs for the active style AND persist them as that style's
+   * override (so edits survive reload and re-selection). Used by every
+   * token-editing path; brandbook edits stay global and are not stamped.
+   */
+  const commitDocs = (
+    s: EditorState,
+    docs: Record<ThemeMode, DesignDoc>,
+    ids: string[] = s.selectedComponents
+  ): Pick<EditorState, "docs" | "styleOverrides"> => {
+    // Refresh auto-generated rationale sections before persisting.
+    const next = {
+      light: regenAutoSections(docs.light, ids),
+      dark: regenAutoSections(docs.dark, ids),
+    };
+    return {
+      docs: next,
+      styleOverrides: {
+        ...s.styleOverrides,
+        [s.presetId]: { light: cloneDoc(next.light), dark: cloneDoc(next.dark) },
+      },
+    };
+  };
+
   /** Apply a mutation to the active theme's document. */
   const mutate = (fn: (doc: DesignDoc) => DesignDoc) =>
-    set((s) => ({
-      docs: { ...s.docs, [s.theme]: fn(cloneDoc(s.docs[s.theme])) },
-    }));
+    set((s) =>
+      commitDocs(s, { ...s.docs, [s.theme]: fn(cloneDoc(s.docs[s.theme])) })
+    );
 
   /** Breakpoints are document-wide → mutate both theme docs together. */
   const mutateBreakpoints = (
@@ -316,7 +361,7 @@ export const useEditor = create<EditorState>()(
         ...d,
         breakpoints: fn(d.breakpoints ?? { ...DEFAULT_BREAKPOINTS }),
       });
-      return { docs: { light: apply(s.docs.light), dark: apply(s.docs.dark) } };
+      return commitDocs(s, { light: apply(s.docs.light), dark: apply(s.docs.dark) });
     });
 
   /** Generate a unique custom-style id from a name. */
@@ -333,9 +378,11 @@ export const useEditor = create<EditorState>()(
     theme: "dark",
     docs: initialDocs,
     customPresets: {},
+    styleOverrides: {},
     highlight: null,
     brandbook: initialBrandbook,
     selectedComponents: DEFAULT_SELECTION,
+    selectedLayouts: DEFAULT_LAYOUT_SELECTION,
     targetTech: "react",
     settingsCollapsed: false,
     previewFullscreen: false,
@@ -345,23 +392,43 @@ export const useEditor = create<EditorState>()(
     active: () => get().docs[get().theme],
 
     applyPreset: (id) => {
+      // Prefer the style's saved overrides over the pristine preset docs.
+      const override = get().styleOverrides[id];
       const preset = findPreset(id, get().customPresets);
-      if (!preset) return;
-      const light = cloneDoc(preset.docs.light);
-      const dark = cloneDoc(preset.docs.dark);
-      // Reset the brandbook to reflect the new preset's palette/fonts.
+      if (!override && !preset) return;
+      const src = override ?? (preset as StylePreset).docs;
+      const light = cloneDoc(src.light);
+      const dark = cloneDoc(src.dark);
+      // Reset the brandbook to reflect the loaded docs' palette/fonts.
       const bb = brandbookFromDoc(light);
+      const ids = get().selectedComponents;
       set({
         presetId: id,
         brandbook: bb,
         docs: {
-          light: { ...light, brandbook: bb },
-          dark: { ...dark, brandbook: bb },
+          light: regenAutoSections({ ...light, brandbook: bb }, ids),
+          dark: regenAutoSections({ ...dark, brandbook: bb }, ids),
         },
       });
     },
 
-    applyBrandPreset: () =>
+    applyBrandPreset: () => {
+      // Prefer saved overrides for the Brand style.
+      const override = get().styleOverrides["brand"];
+      const ids = get().selectedComponents;
+      if (override) {
+        const light = cloneDoc(override.light);
+        const dark = cloneDoc(override.dark);
+        set({
+          presetId: "brand",
+          brandbook: brandbookFromDoc(light),
+          docs: {
+            light: regenAutoSections(light, ids),
+            dark: regenAutoSections(dark, ids),
+          },
+        });
+        return;
+      }
       set((s) => {
         const bb = s.brandbook;
         const unit =
@@ -371,15 +438,35 @@ export const useEditor = create<EditorState>()(
               ? 12
               : 8;
         const roundness = bb.shape?.roundness ?? 1;
-        // Project brand colors + fonts, then brand shape (roundness) + density.
+        // Brand is a self-sufficient style: it projects the brandbook onto a
+        // fixed default base (the editor's default DESIGN.md = Material), not
+        // onto whatever preset happens to be active. So by default Brand's
+        // tokens match the shipped default, and the brandbook fully drives it.
+        const base = PRESETS.material.docs;
         const project = (d: DesignDoc): DesignDoc =>
-          applySpacing(applyRoundness(applyBrandToDoc(d, bb), roundness), unit);
+          applySpacing(applyRoundness(applyBrandToDoc(cloneDoc(d), bb), roundness), unit);
         return {
           presetId: "brand",
           brandbook: bb,
-          docs: { light: project(s.docs.light), dark: project(s.docs.dark) },
+          docs: {
+            light: regenAutoSections(project(base.light), ids),
+            dark: regenAutoSections(project(base.dark), ids),
+          },
         };
-      }),
+      });
+    },
+
+    resetStyle: () => {
+      const id = get().presetId;
+      set((s) => {
+        const next = { ...s.styleOverrides };
+        delete next[id];
+        return { styleOverrides: next };
+      });
+      // Reload pristine: the override is gone, so the apply paths use base docs.
+      if (id === "brand") get().applyBrandPreset();
+      else get().applyPreset(id);
+    },
 
     importDoc: (incoming) =>
       set((s) => {
@@ -417,10 +504,11 @@ export const useEditor = create<EditorState>()(
         otherDoc.writingMode = wm;
         otherDoc.breakpoints = bp;
         otherDoc.brandbook = bb;
-        return {
-          brandbook: bb,
-          docs: { [s.theme]: merged, [other]: otherDoc } as Record<ThemeMode, DesignDoc>,
-        };
+        const docs = {
+          [s.theme]: merged,
+          [other]: otherDoc,
+        } as Record<ThemeMode, DesignDoc>;
+        return { brandbook: bb, ...commitDocs(s, docs) };
       }),
 
     setDirection: (dir) =>
@@ -657,10 +745,14 @@ export const useEditor = create<EditorState>()(
       set((s) => {
         const custom = { ...s.customPresets };
         delete custom[id];
+        // Drop any saved overrides for the removed style too.
+        const overrides = { ...s.styleOverrides };
+        delete overrides[id];
         // If the deleted style was active, fall back to Material.
         const fallback = s.presetId === id;
         return {
           customPresets: custom,
+          styleOverrides: overrides,
           ...(fallback
             ? {
                 presetId: "material",
@@ -676,7 +768,7 @@ export const useEditor = create<EditorState>()(
     setTheme: (theme) => set({ theme }),
 
     loadDoc: (doc) =>
-      set((s) => ({ docs: { ...s.docs, [s.theme]: cloneDoc(doc) } })),
+      set((s) => commitDocs(s, { ...s.docs, [s.theme]: cloneDoc(doc) })),
 
     setMeta: (patch) => mutate((d) => ({ ...d, ...patch })),
 
@@ -768,14 +860,47 @@ export const useEditor = create<EditorState>()(
     setSection: (name, text) =>
       mutate((d) => ({ ...d, sections: { ...d.sections, [name]: text } })),
 
-    toggleComponent: (id) =>
-      set((s) => ({
-        selectedComponents: s.selectedComponents.includes(id)
-          ? s.selectedComponents.filter((c) => c !== id)
-          : [...s.selectedComponents, id],
+    setSectionAuto: (name, auto) =>
+      mutate((d) => ({
+        ...d,
+        sectionsAuto: { ...d.sectionsAuto, [name]: auto },
       })),
-    setSelectedComponents: (ids) => set({ selectedComponents: ids }),
+
+    // Component selection feeds the auto-generated rationale → refresh the docs'
+    // sections, but don't stamp a style override (selection is global state;
+    // applyPreset re-generates on load anyway).
+    toggleComponent: (id) =>
+      set((s) => {
+        const selectedComponents = s.selectedComponents.includes(id)
+          ? s.selectedComponents.filter((c) => c !== id)
+          : [...s.selectedComponents, id];
+        return {
+          selectedComponents,
+          docs: {
+            light: regenAutoSections(s.docs.light, selectedComponents),
+            dark: regenAutoSections(s.docs.dark, selectedComponents),
+          },
+        };
+      }),
+    setSelectedComponents: (ids) =>
+      set((s) => ({
+        selectedComponents: ids,
+        docs: {
+          light: regenAutoSections(s.docs.light, ids),
+          dark: regenAutoSections(s.docs.dark, ids),
+        },
+      })),
     setTargetTech: (tech) => set({ targetTech: tech }),
+
+    // Layout selection is global state used only for the export snapshot + spec;
+    // it does not feed the auto-generated rationale, so no doc regen is needed.
+    toggleLayout: (id) =>
+      set((s) => ({
+        selectedLayouts: s.selectedLayouts.includes(id)
+          ? s.selectedLayouts.filter((l) => l !== id)
+          : [...s.selectedLayouts, id],
+      })),
+    setSelectedLayouts: (ids) => set({ selectedLayouts: ids }),
 
     setSettingsCollapsed: (v) => set({ settingsCollapsed: v }),
     setPreviewFullscreen: (v) => set({ previewFullscreen: v }),
@@ -794,12 +919,16 @@ export const useEditor = create<EditorState>()(
     {
       name: "designmd-custom-styles",
       storage: createJSONStorage(() => localStorage),
-      // Persist user-created styles and the brandbook (scheme, fonts, logos),
-      // not the live editing session (docs come from the active preset).
+      // Persist user-created styles, per-style overrides, the active style id,
+      // and the brandbook — but not the full live docs (those are rebuilt on
+      // rehydrate from the preset + overrides + brandbook).
       partialize: (s) => ({
         customPresets: s.customPresets,
+        styleOverrides: s.styleOverrides,
+        presetId: s.presetId,
         brandbook: s.brandbook,
         selectedComponents: s.selectedComponents,
+        selectedLayouts: s.selectedLayouts,
         targetTech: s.targetTech,
       }),
       // Backfill defaults for any brand sections missing from older persisted
@@ -815,10 +944,19 @@ export const useEditor = create<EditorState>()(
             : current.brandbook,
         };
       },
-      // Re-project the rehydrated brandbook onto the freshly-initialized docs
-      // so the design tokens match the restored brand definition.
+      // Rebuild the live docs for the restored active style: apply paths prefer
+      // a saved override, else load the pristine preset and re-project the saved
+      // brandbook onto it (matching the pre-persist behaviour).
       onRehydrateStorage: () => (state) => {
-        if (state?.brandbook) state.applyBrandbook(state.brandbook);
+        if (!state) return;
+        const id = state.presetId;
+        const hasOverride = !!state.styleOverrides?.[id];
+        if (id === "brand") {
+          state.applyBrandPreset();
+          return;
+        }
+        state.applyPreset(id);
+        if (!hasOverride && state.brandbook) state.applyBrandbook(state.brandbook);
       },
     }
   )

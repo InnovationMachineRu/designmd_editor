@@ -11,7 +11,9 @@ import {
 } from "@/lib/designmd/export";
 import type { DesignDoc, LintResult } from "@/lib/designmd/types";
 import { generateUikitSpec, validateDesign } from "@/lib/api";
-import { ALL_COMPONENTS, TARGET_TECHS } from "@/lib/uikit/catalog";
+import { ALL_COMPONENTS, TARGET_TECHS, uikitYaml } from "@/lib/uikit/catalog";
+import { ALL_LAYOUTS, layoutsYaml } from "@/lib/layouts/catalog";
+import { APP_VERSION } from "@/lib/version";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { CodePanel } from "@/components/preview/CodePanel";
@@ -44,6 +46,7 @@ const tabBtn = (active: boolean) =>
 export function ExportWorkspace() {
   const doc = useEditor((s) => s.docs[s.theme]);
   const selected = useEditor((s) => s.selectedComponents);
+  const selectedLayouts = useEditor((s) => s.selectedLayouts);
   const tech = useEditor((s) => s.targetTech);
   const setTech = useEditor((s) => s.setTargetTech);
 
@@ -56,7 +59,14 @@ export function ExportWorkspace() {
   const [lint, setLint] = useState<LintResult | null>(null);
 
   const activeFormat = FORMATS.find((f) => f.id === format)!;
-  const tokenContent = getTokenContent(format, doc);
+  // Stamp the chosen UIKit components & layouts into the YAML for the exported
+  // DESIGN.md (Markdown format). Token-only formats ignore these extra keys.
+  const docForExport: DesignDoc = {
+    ...doc,
+    uikit: uikitYaml(selected, tech),
+    layouts: layoutsYaml(selectedLayouts),
+  };
+  const tokenContent = getTokenContent(format, docForExport);
 
   // Validate the design system first, then generate. Errors block generation so
   // the produced UIKIT-SPEC.md is always a valid DESIGN.md.
@@ -73,7 +83,12 @@ export function ExportWorkspace() {
         );
         return;
       }
-      const res = await generateUikitSpec({ doc, tech, components: selected });
+      const res = await generateUikitSpec({
+        doc,
+        tech,
+        components: selected,
+        layouts: selectedLayouts,
+      });
       setSpec(res.content);
       setPath(res.path);
       setShow(true);
@@ -92,13 +107,16 @@ export function ExportWorkspace() {
           <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
             Export
           </span>
+          <span className="text-app-muted/70 font-sans font-normal text-[10px] ml-1.5 align-middle tabular-nums">
+            v{APP_VERSION}
+          </span>
         </div>
         <div className="flex-1 flex justify-center">
-          <Stepper current={4} />
+          <Stepper current={5} />
         </div>
         <ChromeThemeSwitcher />
-        <Link href="/uikit" className="text-sm text-app-muted hover:text-app-text">
-          ← Back to UIKit
+        <Link href="/layouts" className="text-sm text-app-muted hover:text-app-text">
+          ← Back to Layouts
         </Link>
       </header>
 
@@ -132,10 +150,10 @@ export function ExportWorkspace() {
         {/* UIKit spec */}
         <aside className="p-5 space-y-5 overflow-auto scroll-thin">
           <div>
-            <h2 className="text-sm font-semibold text-app-text mb-1">UIKit spec (ТЗ)</h2>
+            <h2 className="text-sm font-semibold text-app-text mb-1">UIKit &amp; Layouts spec (ТЗ)</h2>
             <p className="text-xs text-app-muted mb-3">
-              Generate the technical spec for the components you picked on the UIKit step,
-              targeting your stack.
+              Generate the technical spec for the components and layouts you picked, plus
+              media-query rules — targeting your stack.
             </p>
             <h3 className="text-xs font-semibold text-app-text mb-2">Target technology</h3>
             <div className="space-y-2">
@@ -162,6 +180,12 @@ export function ExportWorkspace() {
               <span>Selected components</span>
               <span className="text-app-text font-semibold">
                 {selected.length}/{ALL_COMPONENTS.length}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Selected layouts</span>
+              <span className="text-app-text font-semibold">
+                {selectedLayouts.length}/{ALL_LAYOUTS.length}
               </span>
             </div>
             <div className="flex justify-between">

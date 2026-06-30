@@ -139,6 +139,26 @@ export function parseDesignDoc(src: string): DesignDoc {
     }
   }
 
+  // UIKit / Layouts export snapshots: carry through when well-formed.
+  let uikit: DesignDoc["uikit"];
+  if (isRecord(ext.uikit) && isRecord((ext.uikit as Record<string, unknown>).components)) {
+    uikit = ext.uikit as unknown as DesignDoc["uikit"];
+  }
+  let layouts: DesignDoc["layouts"];
+  if (isRecord(ext.layouts) && isRecord((ext.layouts as Record<string, unknown>).items)) {
+    layouts = ext.layouts as unknown as DesignDoc["layouts"];
+  }
+
+  // Per-section auto/manual flags (booleans only).
+  let sectionsAuto: DesignDoc["sectionsAuto"];
+  if (isRecord(ext.sectionsAuto)) {
+    const sa: Record<string, boolean> = {};
+    for (const [k, v] of Object.entries(ext.sectionsAuto as Record<string, unknown>)) {
+      if (typeof v === "boolean") sa[k] = v;
+    }
+    if (Object.keys(sa).length) sectionsAuto = sa as DesignDoc["sectionsAuto"];
+  }
+
   return {
     version: typeof fm.version === "string" ? fm.version : undefined,
     name: typeof fm.name === "string" ? fm.name : "Untitled System",
@@ -149,10 +169,13 @@ export function parseDesignDoc(src: string): DesignDoc {
     spacing: isRecord(fm.spacing) ? fm.spacing : {},
     components: isRecord(fm.components) ? fm.components : {},
     sections: parseSections(body),
+    sectionsAuto,
     direction,
     writingMode,
     breakpoints,
     brandbook,
+    uikit,
+    layouts,
   };
 }
 

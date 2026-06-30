@@ -3,25 +3,25 @@
 import { type CSSProperties } from "react";
 import Link from "next/link";
 import { useEditor } from "@/lib/store";
-import { CATALOG, ALL_COMPONENTS } from "@/lib/uikit/catalog";
+import { LAYOUT_CATALOG, ALL_LAYOUTS } from "@/lib/layouts/catalog";
 import { docToCssVars, color } from "@/lib/designmd/tokens";
 import { APP_VERSION } from "@/lib/version";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { ThemeToggle } from "@/components/preview/ThemeToggle";
-import { COMPONENT_PREVIEWS, PreviewFallback } from "./previews";
+import { LayoutWireframe } from "./previews";
 
 const miniBtn =
   "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border border-app-border text-app-muted hover:text-app-text hover:bg-app-panel-2 transition-colors";
 
-export function UikitWorkspace() {
+export function LayoutsWorkspace() {
   const doc = useEditor((s) => s.docs[s.theme]);
-  const selected = useEditor((s) => s.selectedComponents);
-  const toggle = useEditor((s) => s.toggleComponent);
-  const setSelected = useEditor((s) => s.setSelectedComponents);
+  const selected = useEditor((s) => s.selectedLayouts);
+  const toggle = useEditor((s) => s.toggleLayout);
+  const setSelected = useEditor((s) => s.setSelectedLayouts);
 
   const selectedSet = new Set(selected);
-  const allIds = ALL_COMPONENTS.map((c) => c.id);
+  const allIds = ALL_LAYOUTS.map((l) => l.id);
   const allSelected = allIds.every((id) => selectedSet.has(id));
 
   const selectAll = () => setSelected(allIds);
@@ -36,8 +36,8 @@ export function UikitWorkspace() {
     }
   };
 
-  // Previews resolve concrete token values; the stage backdrop uses the doc's
-  // surface so each component sits on the design system's real background.
+  // Wireframes resolve concrete token values; the stage backdrop uses the doc's
+  // surface so each layout sits on the design system's real background.
   const stageVars = docToCssVars(doc) as CSSProperties;
   const stageBg = color(doc, "surface", "#ffffff");
   const stageInk = color(doc, "on-surface", "#16181d");
@@ -48,20 +48,20 @@ export function UikitWorkspace() {
         <div className="font-display font-semibold text-[15px] tracking-tight text-app-text shrink-0">
           DESIGN<span className="text-app-accent">.md</span>
           <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
-            UIKit
+            Layouts
           </span>
           <span className="text-app-muted/70 font-sans font-normal text-[10px] ml-1.5 align-middle tabular-nums">
             v{APP_VERSION}
           </span>
         </div>
         <div className="flex-1 flex justify-center">
-          <Stepper current={3} />
+          <Stepper current={4} />
         </div>
         <ChromeThemeSwitcher />
         <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
-          <Link href="/layouts" className="text-sm font-medium text-app-accent hover:underline">
-            Next: Layouts →
+          <Link href="/export" className="text-sm font-medium text-app-accent hover:underline">
+            Next: Export →
           </Link>
         </div>
       </header>
@@ -70,17 +70,17 @@ export function UikitWorkspace() {
         {/* Intro */}
         <div className="flex items-start justify-between gap-4">
           <div>
-            <h1 className="text-lg font-semibold text-app-text">UIKit</h1>
+            <h1 className="text-lg font-semibold text-app-text">Layouts</h1>
             <p className="text-sm text-app-muted mt-1 max-w-2xl">
-              Live React + TypeScript previews of every component, styled by the{" "}
-              <code className="font-mono">{doc.name}</code> tokens — toggle the theme to see
-              light/dark. Pick the ones your kit needs; generate the spec on the{" "}
+              Every page and complex-component layout your product needs — schematic previews use the{" "}
+              <code className="font-mono">{doc.name}</code> tokens. Pick the ones your kit should ship;
+              they&apos;re embedded in the exported DESIGN.md and the generated spec on the{" "}
               <Link href="/export" className="text-app-accent hover:underline">Export</Link> step.
             </p>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
             <span className="text-xs text-app-muted">
-              {selected.length}/{ALL_COMPONENTS.length} selected
+              {selected.length}/{ALL_LAYOUTS.length} selected
             </span>
             <button
               type="button"
@@ -92,8 +92,8 @@ export function UikitWorkspace() {
           </div>
         </div>
 
-        {CATALOG.map((cat) => {
-          const groupIds = cat.components.map((c) => c.id);
+        {LAYOUT_CATALOG.map((cat) => {
+          const groupIds = cat.layouts.map((l) => l.id);
           const groupSelected = groupIds.filter((id) => selectedSet.has(id)).length;
           const allInGroup = groupSelected === groupIds.length;
 
@@ -110,20 +110,19 @@ export function UikitWorkspace() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
-                {cat.components.map((comp) => {
-                  const on = selectedSet.has(comp.id);
-                  const Preview = COMPONENT_PREVIEWS[comp.id] ?? PreviewFallback;
+                {cat.layouts.map((item) => {
+                  const on = selectedSet.has(item.id);
                   return (
                     <div
-                      key={comp.id}
+                      key={item.id}
                       role="button"
                       tabIndex={0}
                       aria-pressed={on}
-                      onClick={() => toggle(comp.id)}
+                      onClick={() => toggle(item.id)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
-                          toggle(comp.id);
+                          toggle(item.id);
                         }
                       }}
                       className={`rounded-xl border overflow-hidden cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-app-accent ${
@@ -132,16 +131,16 @@ export function UikitWorkspace() {
                           : "border-app-border hover:border-app-accent/50"
                       }`}
                     >
-                      {/* Live preview stage (illustrative — clicks pass through to the card) */}
+                      {/* Schematic wireframe stage (illustrative — clicks pass through) */}
                       <div
-                        className="flex items-center justify-center p-5 min-h-[132px] border-b border-app-border/60"
+                        className="p-4 min-h-[148px] flex items-center border-b border-app-border/60"
                         style={{ ...stageVars, background: stageBg, color: stageInk }}
                       >
                         <div
-                          className="w-full flex items-center justify-center"
+                          className="w-full"
                           style={{ pointerEvents: "none", userSelect: "none" }}
                         >
-                          <Preview doc={doc} />
+                          <LayoutWireframe item={item} doc={doc} />
                         </div>
                       </div>
 
@@ -157,9 +156,12 @@ export function UikitWorkspace() {
                           >
                             {on ? "✓" : ""}
                           </span>
-                          <span className="text-sm font-medium text-app-text">{comp.name}</span>
+                          <span className="text-sm font-medium text-app-text">{item.name}</span>
+                          <span className="text-[10px] uppercase tracking-wide text-app-muted border border-app-border rounded px-1 py-px ml-auto">
+                            {item.kind}
+                          </span>
                         </div>
-                        <p className="text-xs text-app-muted mt-1 line-clamp-2">{comp.description}</p>
+                        <p className="text-xs text-app-muted mt-1 line-clamp-2">{item.description}</p>
                       </div>
                     </div>
                   );
