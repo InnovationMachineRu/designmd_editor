@@ -32,6 +32,8 @@ export async function validateDesign(
 
 export interface UikitSpecResponse {
   path: string;
+  /** Path to the `.uikit-ready.json` completion sentinel for the orchestrator. */
+  readyPath?: string;
   content: string;
 }
 

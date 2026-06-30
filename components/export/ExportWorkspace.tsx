@@ -13,6 +13,8 @@ import type { DesignDoc, LintResult } from "@/lib/designmd/types";
 import { generateUikitSpec, validateDesign } from "@/lib/api";
 import { ALL_COMPONENTS, TARGET_TECHS, uikitYaml } from "@/lib/uikit/catalog";
 import { ALL_LAYOUTS, layoutsYaml } from "@/lib/layouts/catalog";
+import { buildTemplateBundle, bundleToZip } from "@/lib/templates";
+import { downloadBlob } from "@/lib/download";
 import { APP_VERSION } from "@/lib/version";
 import { Stepper } from "@/components/wizard/Stepper";
 import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
@@ -59,6 +61,21 @@ export function ExportWorkspace() {
   const [lint, setLint] = useState<LintResult | null>(null);
 
   const activeFormat = FORMATS.find((f) => f.id === format)!;
+
+  // Generate the AI-agents + UIKit-starter template bundle for the current
+  // selections and download it as a single .zip.
+  const onDownloadTemplates = () => {
+    const files = buildTemplateBundle({
+      doc,
+      tech,
+      components: selected,
+      layouts: selectedLayouts,
+    });
+    const slug =
+      doc.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") ||
+      "designmd";
+    downloadBlob(`${slug}-ai-agents.zip`, bundleToZip(files));
+  };
   // Stamp the chosen UIKit components & layouts into the YAML for the exported
   // DESIGN.md (Markdown format). Token-only formats ignore these extra keys.
   const docForExport: DesignDoc = {
@@ -216,6 +233,21 @@ export function ExportWorkspace() {
                 first.
               </p>
             )}
+          </div>
+
+          <div className="rounded-lg border border-app-border p-3 space-y-2">
+            <h3 className="text-xs font-semibold text-app-text">AI agents &amp; templates</h3>
+            <p className="text-[11px] text-app-muted leading-relaxed">
+              Download the Claude Code agents, skills, editable best practices, and a
+              UIKit starter for your stack — generated from your selections.
+            </p>
+            <button
+              className={btnGhostCls}
+              onClick={onDownloadTemplates}
+              disabled={selected.length === 0}
+            >
+              Download AI agents + UIKit starter (.zip)
+            </button>
           </div>
 
           {path && (

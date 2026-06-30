@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { downloadText } from "@/lib/download";
 
 const actionBtn =
   "inline-flex items-center gap-1 px-2.5 py-1 rounded-md border border-app-border text-xs text-app-muted hover:text-app-text hover:bg-app-panel-2 transition-colors";
@@ -14,17 +15,7 @@ export function CodePanel({ content, filename }: { content: string; filename: st
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const onSave = () => {
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const onSave = () => downloadText(filename, content);
 
   return (
     <div className="flex flex-col h-full min-h-0 rounded-xl border border-app-border overflow-hidden">
