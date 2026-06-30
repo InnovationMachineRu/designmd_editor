@@ -3,11 +3,12 @@
 import Link from "next/link";
 
 const STEPS = [
-  { n: 1, label: "Design system", href: "/" },
-  { n: 2, label: "UIKit components", href: "/uikit" },
+  { n: 1, label: "Brandbook", href: "/brandbook" },
+  { n: 2, label: "Design system", href: "/" },
+  { n: 3, label: "UIKit components", href: "/uikit" },
 ];
 
-export function Stepper({ current }: { current: 1 | 2 }) {
+export function Stepper({ current }: { current: 1 | 2 | 3 }) {
   return (
     <nav className="flex items-center gap-3">
       {STEPS.map((s, i) => (

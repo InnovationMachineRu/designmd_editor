@@ -1,6 +1,8 @@
 import { parse as yamlParse } from "yaml";
 import {
   CANONICAL_SECTIONS,
+  type BrandbookData,
+  type BrandLogo,
   type CanonicalSection,
   type DesignDoc,
   type Sections,
@@ -94,6 +96,49 @@ export function parseDesignDoc(src: string): DesignDoc {
     if (Object.keys(bp).length) breakpoints = bp;
   }
 
+  // Brandbook: accept a well-formed object, otherwise ignore.
+  let brandbook: BrandbookData | undefined;
+  if (isRecord(ext.brandbook)) {
+    const b = ext.brandbook as Record<string, unknown>;
+    const fonts = isRecord(b.fonts) ? (b.fonts as Record<string, unknown>) : {};
+    brandbook = {
+      baseColor: typeof b.baseColor === "string" ? b.baseColor : "#6750A4",
+      scheme:
+        typeof b.scheme === "string"
+          ? (b.scheme as BrandbookData["scheme"])
+          : "triadic",
+      schemeColors: Array.isArray(b.schemeColors)
+        ? (b.schemeColors.filter((c) => typeof c === "string") as string[])
+        : [],
+      fonts: {
+        heading: typeof fonts.heading === "string" ? fonts.heading : "Inter",
+        body: typeof fonts.body === "string" ? fonts.body : "Inter",
+        mono: typeof fonts.mono === "string" ? fonts.mono : undefined,
+      },
+      logos: Array.isArray(b.logos)
+        ? (b.logos.filter(
+            (l) =>
+              isRecord(l) &&
+              typeof (l as Record<string, unknown>).dataUrl === "string"
+          ) as BrandLogo[])
+        : [],
+    };
+    // Extended sections: carry through when well-formed (objects/values only).
+    for (const key of [
+      "icons",
+      "gradients",
+      "shape",
+      "imagery",
+      "motion",
+      "voice",
+      "spacing",
+    ] as const) {
+      if (isRecord(b[key])) {
+        (brandbook as unknown as Record<string, unknown>)[key] = b[key];
+      }
+    }
+  }
+
   return {
     version: typeof fm.version === "string" ? fm.version : undefined,
     name: typeof fm.name === "string" ? fm.name : "Untitled System",
@@ -107,6 +152,7 @@ export function parseDesignDoc(src: string): DesignDoc {
     direction,
     writingMode,
     breakpoints,
+    brandbook,
   };
 }
 

@@ -65,6 +65,64 @@ export type CanonicalSection = (typeof CANONICAL_SECTIONS)[number];
 /** Rationale prose keyed by canonical section heading. */
 export type Sections = Partial<Record<CanonicalSection, string>>;
 
+/** Color-harmony scheme used by the Brandbook color wheel. */
+export type SchemeName =
+  | "monochromatic"
+  | "complementary"
+  | "analogous"
+  | "triadic"
+  | "tetradic";
+
+/** An uploaded, reusable brand logo (stored inline as a data-URL). */
+export interface BrandLogo {
+  id: string;
+  /** Slot label, e.g. "Primary", "Mark", "Inverse", "Wordmark". */
+  label: string;
+  /** data:... URL (png/svg/jpeg). */
+  dataUrl: string;
+}
+
+/**
+ * Brandbook: the upstream brand definition (color scheme, fonts, logos) that
+ * drives the design tokens. Persisted in localStorage and embedded in DESIGN.md
+ * under the `x-design-md` extension key.
+ */
+export interface BrandbookData {
+  /** Anchor color for the harmony wheel. */
+  baseColor: string;
+  scheme: SchemeName;
+  /** Derived palette (base first), kept in sync with baseColor + scheme. */
+  schemeColors: string[];
+  fonts: { heading: string; body: string; mono?: string };
+  logos: BrandLogo[];
+
+  // --- extended brand sections (all optional; stored in x-design-md) ---
+  /** Icon style + uploaded custom SVG icons. */
+  icons?: {
+    strokeWidth: number;
+    size: number;
+    corner: "round" | "sharp";
+    custom: BrandLogo[];
+  };
+  /** Brand gradients derived from the scheme at this angle. */
+  gradients?: { angle: number };
+  /** Roundness factor (drives `rounded`) and elevation depth 0–4. */
+  shape?: { roundness: number; elevation: number };
+  /** Moodboard images + treatment. */
+  imagery?: {
+    radius: number;
+    overlay: number;
+    duotone: boolean;
+    images: BrandLogo[];
+  };
+  /** Motion language. */
+  motion?: { duration: number; easing: string };
+  /** Brand voice & messaging. */
+  voice?: { tagline: string; tone: string[]; dos: string; donts: string };
+  /** Spacing density (drives `spacing`). */
+  spacing?: { density: "compact" | "comfortable" | "spacious" };
+}
+
 /** Text reading direction. */
 export type Direction = "ltr" | "rtl";
 
@@ -91,6 +149,8 @@ export interface DesignDoc {
   writingMode?: WritingMode;
   /** Responsive breakpoints (name → min-width px). Stored in x-design-md. */
   breakpoints?: Record<string, number>;
+  /** Brand definition driving the tokens. Stored in x-design-md. */
+  brandbook?: BrandbookData;
 }
 
 /** Fallback breakpoints when a document defines none. */

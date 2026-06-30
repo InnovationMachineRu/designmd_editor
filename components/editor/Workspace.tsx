@@ -64,7 +64,7 @@ export function Workspace() {
           <span className="text-app-muted font-normal text-sm ml-2">editor</span>
         </div>
         <div className="flex-1 flex justify-center">
-          <Stepper current={1} />
+          <Stepper current={2} />
         </div>
         <div className="flex items-center gap-2">
           <button className={btnGhostCls} onClick={() => setShowImport(true)} disabled={busy !== null}>

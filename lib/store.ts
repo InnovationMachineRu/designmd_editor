@@ -4,17 +4,21 @@ import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
   DEFAULT_BREAKPOINTS,
+  type BrandbookData,
+  type BrandLogo,
   type ComponentProp,
   type ComponentToken,
   type DecorKind,
   type DesignDoc,
   type Direction,
   type HighlightTarget,
+  type SchemeName,
   type StylePreset,
   type ThemeMode,
   type TypographyToken,
   type WritingMode,
 } from "./designmd/types";
+import { harmony, onColorFor, shade } from "./designmd/color";
 import { PRESETS } from "./presets";
 import { blankDocs } from "./presets/blank";
 
@@ -44,6 +48,112 @@ export function resolveDecor(
   return findPreset(presetId, custom)?.decor ?? "material";
 }
 
+/** Default values for the extended brand sections. */
+function defaultBrandSections(): Pick<
+  BrandbookData,
+  "icons" | "gradients" | "shape" | "imagery" | "motion" | "voice" | "spacing"
+> {
+  return {
+    icons: { strokeWidth: 1.8, size: 24, corner: "round", custom: [] },
+    gradients: { angle: 135 },
+    shape: { roundness: 1, elevation: 2 },
+    imagery: { radius: 12, overlay: 0, duotone: false, images: [] },
+    motion: { duration: 200, easing: "cubic-bezier(0.4, 0, 0.2, 1)" },
+    voice: { tagline: "", tone: [], dos: "", donts: "" },
+    spacing: { density: "comfortable" },
+  };
+}
+
+/** Derive a Brandbook snapshot from a document's current tokens. */
+function brandbookFromDoc(doc: DesignDoc): BrandbookData {
+  if (doc.brandbook) return { ...defaultBrandSections(), ...doc.brandbook };
+  const schemeColors = ["primary", "secondary", "tertiary", "accent"]
+    .map((r) => doc.colors[r])
+    .filter(Boolean) as string[];
+  return {
+    baseColor: doc.colors.primary ?? "#6750A4",
+    scheme: "triadic",
+    schemeColors: schemeColors.length ? schemeColors : ["#6750A4"],
+    fonts: {
+      heading: doc.typography["headline-lg"]?.fontFamily ?? "Inter",
+      body: doc.typography["body-md"]?.fontFamily ?? "Inter",
+    },
+    logos: [],
+    ...defaultBrandSections(),
+  };
+}
+
+/** Apply a roundness factor to the `rounded` token scale (keeps `full`). */
+function applyRoundness(doc: DesignDoc, factor: number): DesignDoc {
+  const BASE: Record<string, number> = { sm: 4, DEFAULT: 6, md: 8, lg: 12, xl: 16, "2xl": 24 };
+  const rounded = { ...doc.rounded };
+  for (const key of Object.keys(rounded)) {
+    if (key === "full" || /9999|50%/.test(String(rounded[key]))) continue;
+    const base = BASE[key];
+    if (base !== undefined) rounded[key] = `${Math.round(base * factor)}px`;
+  }
+  return { ...doc, rounded };
+}
+
+/** Apply a base spacing unit to the `spacing` token scale. */
+function applySpacing(doc: DesignDoc, unit: number): DesignDoc {
+  const MULT: Record<string, number> = {
+    unit: 1,
+    "control-padding": 1.5,
+    "card-gap": 2,
+    "container-padding": 3,
+    "section-margin": 5,
+  };
+  const spacing = { ...doc.spacing };
+  for (const key of Object.keys(spacing)) {
+    const m = MULT[key];
+    if (m !== undefined) spacing[key] = `${Math.round(unit * m)}px`;
+  }
+  return { ...doc, spacing };
+}
+
+/** True for heading-tier typography tokens (vs. body/label). */
+function isHeadingToken(key: string): boolean {
+  return /^(display|headline|title)/.test(key);
+}
+
+/**
+ * Project a Brandbook onto a document's tokens: brand colors → role colors
+ * (with computed on-colors), fonts → typography families. Always stamps the
+ * brandbook onto the doc so it serializes into DESIGN.md.
+ */
+function applyBrandToDoc(doc: DesignDoc, bb: BrandbookData): DesignDoc {
+  const colors = { ...doc.colors };
+  const [c0, c1, c2, c3] = bb.schemeColors;
+  if (c0) {
+    colors.primary = c0;
+    colors["on-primary"] = onColorFor(c0);
+    colors["primary-hover"] = shade(c0, 0.12);
+  }
+  if (c1) {
+    colors.secondary = c1;
+    colors["on-secondary"] = onColorFor(c1);
+  }
+  if (c2) {
+    colors.tertiary = c2;
+    colors["on-tertiary"] = onColorFor(c2);
+  }
+  const accent = c3 ?? c2 ?? c1;
+  if (accent) {
+    colors.accent = accent;
+    colors["on-accent"] = onColorFor(accent);
+  }
+
+  const typography = Object.fromEntries(
+    Object.entries(doc.typography).map(([k, t]) => [
+      k,
+      { ...t, fontFamily: isHeadingToken(k) ? bb.fonts.heading : bb.fonts.body },
+    ])
+  );
+
+  return { ...doc, colors, typography, brandbook: bb };
+}
+
 /** Rename a key in an ordered record while preserving insertion order. */
 function renameKey<T>(
   obj: Record<string, T>,
@@ -66,6 +176,9 @@ export interface EditorState {
 
   /** Token selected in the live preview to highlight in the editor. */
   highlight: HighlightTarget | null;
+
+  /** Brand definition (color scheme, fonts, logos) driving the tokens. */
+  brandbook: BrandbookData;
 
   // UIKit step state
   selectedComponents: string[];
@@ -92,6 +205,27 @@ export interface EditorState {
 
   // --- preview ↔ editor linking ---
   setHighlight: (target: HighlightTarget | null) => void;
+
+  // --- brandbook ---
+  applyBrandbook: (bb: BrandbookData) => void;
+  setBrandbookBase: (hex: string) => void;
+  setScheme: (scheme: SchemeName) => void;
+  setBrandFont: (role: "heading" | "body" | "mono", family: string) => void;
+  addLogo: (label: string, dataUrl: string) => void;
+  removeLogo: (id: string) => void;
+
+  // --- brandbook: extended sections ---
+  patchBrandbook: (patch: Partial<BrandbookData>) => void;
+  addAsset: (kind: "logo" | "icon" | "image", label: string, dataUrl: string) => void;
+  removeAsset: (kind: "logo" | "icon" | "image", id: string) => void;
+  setIconStyle: (patch: Partial<NonNullable<BrandbookData["icons"]>>) => void;
+  setGradientAngle: (angle: number) => void;
+  setRoundness: (factor: number) => void;
+  setElevation: (level: number) => void;
+  setImagery: (patch: Partial<NonNullable<BrandbookData["imagery"]>>) => void;
+  setMotion: (patch: Partial<NonNullable<BrandbookData["motion"]>>) => void;
+  setVoice: (patch: Partial<NonNullable<BrandbookData["voice"]>>) => void;
+  setDensity: (density: "compact" | "comfortable" | "spacious") => void;
 
   // --- custom styles ---
   saveCurrentAsStyle: (name: string, decor: DecorKind) => void;
@@ -154,6 +288,8 @@ const initialDocs = {
   dark: cloneDoc(PRESETS.material.docs.dark),
 };
 
+const initialBrandbook = brandbookFromDoc(initialDocs.light);
+
 export const useEditor = create<EditorState>()(
   persist(
     (set, get) => {
@@ -190,6 +326,7 @@ export const useEditor = create<EditorState>()(
     docs: initialDocs,
     customPresets: {},
     highlight: null,
+    brandbook: initialBrandbook,
     selectedComponents: [],
     targetTech: "react",
     settingsCollapsed: false,
@@ -201,11 +338,16 @@ export const useEditor = create<EditorState>()(
     applyPreset: (id) => {
       const preset = findPreset(id, get().customPresets);
       if (!preset) return;
+      const light = cloneDoc(preset.docs.light);
+      const dark = cloneDoc(preset.docs.dark);
+      // Reset the brandbook to reflect the new preset's palette/fonts.
+      const bb = brandbookFromDoc(light);
       set({
         presetId: id,
+        brandbook: bb,
         docs: {
-          light: cloneDoc(preset.docs.light),
-          dark: cloneDoc(preset.docs.dark),
+          light: { ...light, brandbook: bb },
+          dark: { ...dark, brandbook: bb },
         },
       });
     },
@@ -235,14 +377,21 @@ export const useEditor = create<EditorState>()(
           ? { ...(s.docs[s.theme].breakpoints ?? {}), ...incoming.breakpoints }
           : s.docs[s.theme].breakpoints;
         const other: ThemeMode = s.theme === "light" ? "dark" : "light";
+        // Brandbook is document-wide → carry the imported one (or keep current).
+        const bb = incoming.brandbook ?? s.brandbook;
         merged.direction = dir;
         merged.writingMode = wm;
         merged.breakpoints = bp;
+        merged.brandbook = bb;
         const otherDoc = cloneDoc(s.docs[other]);
         otherDoc.direction = dir;
         otherDoc.writingMode = wm;
         otherDoc.breakpoints = bp;
-        return { docs: { [s.theme]: merged, [other]: otherDoc } as Record<ThemeMode, DesignDoc> };
+        otherDoc.brandbook = bb;
+        return {
+          brandbook: bb,
+          docs: { [s.theme]: merged, [other]: otherDoc } as Record<ThemeMode, DesignDoc>,
+        };
       }),
 
     setDirection: (dir) =>
@@ -262,6 +411,172 @@ export const useEditor = create<EditorState>()(
       })),
 
     setHighlight: (target) => set({ highlight: target }),
+
+    // --- brandbook ---
+    applyBrandbook: (bb) =>
+      set((s) => ({
+        brandbook: bb,
+        docs: {
+          light: applyBrandToDoc(s.docs.light, bb),
+          dark: applyBrandToDoc(s.docs.dark, bb),
+        },
+      })),
+
+    setBrandbookBase: (hex) => {
+      const prev = get().brandbook;
+      get().applyBrandbook({
+        ...prev,
+        baseColor: hex,
+        schemeColors: harmony(hex, prev.scheme),
+      });
+    },
+
+    setScheme: (scheme) => {
+      const prev = get().brandbook;
+      get().applyBrandbook({
+        ...prev,
+        scheme,
+        schemeColors: harmony(prev.baseColor, scheme),
+      });
+    },
+
+    setBrandFont: (role, family) => {
+      const prev = get().brandbook;
+      get().applyBrandbook({
+        ...prev,
+        fonts: { ...prev.fonts, [role]: family },
+      });
+    },
+
+    // Logo changes only touch brandbook (not colors/typography), but still
+    // mirror onto both docs so they serialize into DESIGN.md.
+    addLogo: (label, dataUrl) =>
+      set((s) => {
+        const id = `${Date.now().toString(36)}${Math.round(Math.random() * 1e6).toString(36)}`;
+        const logo: BrandLogo = { id, label, dataUrl };
+        const bb: BrandbookData = { ...s.brandbook, logos: [...s.brandbook.logos, logo] };
+        return {
+          brandbook: bb,
+          docs: {
+            light: { ...s.docs.light, brandbook: bb },
+            dark: { ...s.docs.dark, brandbook: bb },
+          },
+        };
+      }),
+
+    removeLogo: (id) =>
+      set((s) => {
+        const bb: BrandbookData = {
+          ...s.brandbook,
+          logos: s.brandbook.logos.filter((l) => l.id !== id),
+        };
+        return {
+          brandbook: bb,
+          docs: {
+            light: { ...s.docs.light, brandbook: bb },
+            dark: { ...s.docs.dark, brandbook: bb },
+          },
+        };
+      }),
+
+    // Merge a brandbook patch + mirror onto both docs (no color/font reapply).
+    patchBrandbook: (patch) =>
+      set((s) => {
+        const bb: BrandbookData = { ...s.brandbook, ...patch };
+        return {
+          brandbook: bb,
+          docs: {
+            light: { ...s.docs.light, brandbook: bb },
+            dark: { ...s.docs.dark, brandbook: bb },
+          },
+        };
+      }),
+
+    addAsset: (kind, label, dataUrl) => {
+      const id = `${Date.now().toString(36)}${Math.round(Math.random() * 1e6).toString(36)}`;
+      const asset: BrandLogo = { id, label, dataUrl };
+      const bb = get().brandbook;
+      if (kind === "logo") {
+        get().patchBrandbook({ logos: [...bb.logos, asset] });
+      } else if (kind === "icon") {
+        const icons = bb.icons ?? { strokeWidth: 1.8, size: 24, corner: "round", custom: [] };
+        get().patchBrandbook({ icons: { ...icons, custom: [...icons.custom, asset] } });
+      } else {
+        const imagery = bb.imagery ?? { radius: 12, overlay: 0, duotone: false, images: [] };
+        get().patchBrandbook({ imagery: { ...imagery, images: [...imagery.images, asset] } });
+      }
+    },
+
+    removeAsset: (kind, id) => {
+      const bb = get().brandbook;
+      if (kind === "logo") {
+        get().patchBrandbook({ logos: bb.logos.filter((l) => l.id !== id) });
+      } else if (kind === "icon" && bb.icons) {
+        get().patchBrandbook({
+          icons: { ...bb.icons, custom: bb.icons.custom.filter((l) => l.id !== id) },
+        });
+      } else if (kind === "image" && bb.imagery) {
+        get().patchBrandbook({
+          imagery: { ...bb.imagery, images: bb.imagery.images.filter((l) => l.id !== id) },
+        });
+      }
+    },
+
+    setIconStyle: (patch) => {
+      const icons = get().brandbook.icons ?? {
+        strokeWidth: 1.8,
+        size: 24,
+        corner: "round",
+        custom: [],
+      };
+      get().patchBrandbook({ icons: { ...icons, ...patch } });
+    },
+
+    setGradientAngle: (angle) => get().patchBrandbook({ gradients: { angle } }),
+
+    setRoundness: (factor) =>
+      set((s) => {
+        const shape = { ...(s.brandbook.shape ?? { roundness: 1, elevation: 2 }), roundness: factor };
+        const bb: BrandbookData = { ...s.brandbook, shape };
+        const apply = (d: DesignDoc) => ({ ...applyRoundness(d, factor), brandbook: bb });
+        return { brandbook: bb, docs: { light: apply(s.docs.light), dark: apply(s.docs.dark) } };
+      }),
+
+    setElevation: (level) => {
+      const shape = { ...(get().brandbook.shape ?? { roundness: 1, elevation: 2 }), elevation: level };
+      get().patchBrandbook({ shape });
+    },
+
+    setImagery: (patch) => {
+      const imagery = get().brandbook.imagery ?? {
+        radius: 12,
+        overlay: 0,
+        duotone: false,
+        images: [],
+      };
+      get().patchBrandbook({ imagery: { ...imagery, ...patch } });
+    },
+
+    setMotion: (patch) => {
+      const motion = get().brandbook.motion ?? {
+        duration: 200,
+        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
+      };
+      get().patchBrandbook({ motion: { ...motion, ...patch } });
+    },
+
+    setVoice: (patch) => {
+      const voice = get().brandbook.voice ?? { tagline: "", tone: [], dos: "", donts: "" };
+      get().patchBrandbook({ voice: { ...voice, ...patch } });
+    },
+
+    setDensity: (density) =>
+      set((s) => {
+        const unit = density === "compact" ? 4 : density === "spacious" ? 12 : 8;
+        const bb: BrandbookData = { ...s.brandbook, spacing: { density } };
+        const apply = (d: DesignDoc) => ({ ...applySpacing(d, unit), brandbook: bb });
+        return { brandbook: bb, docs: { light: apply(s.docs.light), dark: apply(s.docs.dark) } };
+      }),
 
     setBreakpoint: (name, value) =>
       mutateBreakpoints((bp) => ({ ...bp, [name]: value })),
@@ -441,8 +756,30 @@ export const useEditor = create<EditorState>()(
     {
       name: "designmd-custom-styles",
       storage: createJSONStorage(() => localStorage),
-      // Persist only user-created styles, not the live editing session.
-      partialize: (s) => ({ customPresets: s.customPresets }),
+      // Persist user-created styles and the brandbook (scheme, fonts, logos),
+      // not the live editing session (docs come from the active preset).
+      partialize: (s) => ({
+        customPresets: s.customPresets,
+        brandbook: s.brandbook,
+      }),
+      // Backfill defaults for any brand sections missing from older persisted
+      // state, so selectors never have to synthesize fresh objects (which would
+      // cause render loops).
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<EditorState>;
+        return {
+          ...current,
+          ...p,
+          brandbook: p.brandbook
+            ? { ...defaultBrandSections(), ...p.brandbook }
+            : current.brandbook,
+        };
+      },
+      // Re-project the rehydrated brandbook onto the freshly-initialized docs
+      // so the design tokens match the restored brand definition.
+      onRehydrateStorage: () => (state) => {
+        if (state?.brandbook) state.applyBrandbook(state.brandbook);
+      },
     }
   )
 );

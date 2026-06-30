@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { FontLoader } from "@/components/FontLoader";
 
 export const metadata: Metadata = {
   title: "DESIGN.md Editor",
@@ -13,7 +14,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Preview fonts used by the built-in presets (Inter, Roboto, Poppins). */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -23,7 +24,10 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <FontLoader />
+        {children}
+      </body>
     </html>
   );
 }

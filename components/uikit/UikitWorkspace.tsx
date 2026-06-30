@@ -59,7 +59,7 @@ export function UikitWorkspace() {
           <span className="text-app-muted font-normal text-sm ml-2">UIKit</span>
         </div>
         <div className="flex-1 flex justify-center">
-          <Stepper current={2} />
+          <Stepper current={3} />
         </div>
         <Link href="/" className="text-sm text-app-muted hover:text-app-text">
           ← Back to editor

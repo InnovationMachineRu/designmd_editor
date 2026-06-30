@@ -5,6 +5,7 @@ import { useEditor } from "@/lib/store";
 import { resolveTypography } from "@/lib/designmd/tokens";
 import { type Decor } from "./decor";
 import { makeMark } from "./inspect";
+import { SnapshotSection } from "./sections/Snapshot";
 import { ColorPaletteSection } from "./sections/ColorPalette";
 import { TypographySection } from "./sections/Typography";
 import { ButtonsSection } from "./sections/Buttons";
@@ -37,6 +38,13 @@ export function Gallery({ doc, decor }: { doc: DesignDoc; decor: Decor }) {
     <div>
       {/* Cover */}
       <header className="mb-2">
+        {(() => {
+          const logo = doc.brandbook?.logos.find((l) => l.label === "Primary");
+          return logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={logo.dataUrl} alt="" className="h-10 mb-3 object-contain" />
+          ) : null;
+        })()}
         <div style={resolveTypography(doc, "{typography.display-lg}")}>{doc.name}</div>
         {doc.description && (
           <p
@@ -48,6 +56,7 @@ export function Gallery({ doc, decor }: { doc: DesignDoc; decor: Decor }) {
         )}
       </header>
 
+      <SnapshotSection {...props} />
       <ColorPaletteSection {...props} />
       <TypographySection {...props} />
       <ButtonsSection {...props} />
