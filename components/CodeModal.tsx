@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 
-/** Simple modal showing generated file content with a copy button. */
+/** Simple modal showing generated file content with copy + download buttons. */
 export function CodeModal({
   title,
   content,
   filename,
+  secondaryFilename,
   onClose,
 }: {
   title: string;
   content: string;
   filename: string;
+  /** When set, offers a second download saving the same content under this name. */
+  secondaryFilename?: string;
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
@@ -22,12 +25,12 @@ export function CodeModal({
     setTimeout(() => setCopied(false), 1500);
   };
 
-  const download = () => {
+  const download = (name: string) => {
     const blob = new Blob([content], { type: "text/markdown" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = filename;
+    a.download = name;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -46,9 +49,17 @@ export function CodeModal({
           <button onClick={copy} className="text-xs text-app-accent hover:underline">
             {copied ? "Copied ✓" : "Copy"}
           </button>
-          <button onClick={download} className="text-xs text-app-accent hover:underline">
+          <button onClick={() => download(filename)} className="text-xs text-app-accent hover:underline">
             Download
           </button>
+          {secondaryFilename && (
+            <button
+              onClick={() => download(secondaryFilename)}
+              className="text-xs text-app-accent hover:underline"
+            >
+              Download as {secondaryFilename}
+            </button>
+          )}
           <button onClick={onClose} className="text-app-muted hover:text-app-text">
             ✕
           </button>

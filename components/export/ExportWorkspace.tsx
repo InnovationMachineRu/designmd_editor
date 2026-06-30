@@ -9,8 +9,8 @@ import {
   docToTailwindTheme,
   docToDesignTokensJson,
 } from "@/lib/designmd/export";
-import type { DesignDoc } from "@/lib/designmd/types";
-import { generateUikitSpec } from "@/lib/api";
+import type { DesignDoc, LintResult } from "@/lib/designmd/types";
+import { generateUikitSpec, validateDesign } from "@/lib/api";
 import { ALL_COMPONENTS, TARGET_TECHS } from "@/lib/uikit/catalog";
 import { Stepper } from "@/components/wizard/Stepper";
 import { CodePanel } from "@/components/preview/CodePanel";
@@ -52,14 +52,26 @@ export function ExportWorkspace() {
   const [path, setPath] = useState<string | null>(null);
   const [show, setShow] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [lint, setLint] = useState<LintResult | null>(null);
 
   const activeFormat = FORMATS.find((f) => f.id === format)!;
   const tokenContent = getTokenContent(format, doc);
 
+  // Validate the design system first, then generate. Errors block generation so
+  // the produced UIKIT-SPEC.md is always a valid DESIGN.md.
   const onGenerate = async () => {
     setBusy(true);
     setError(null);
+    setLint(null);
     try {
+      const { lint: result } = await validateDesign(doc);
+      setLint(result);
+      if (result.summary.errors > 0) {
+        setError(
+          `Design has ${result.summary.errors} validation error(s). Fix them in the Design system step before generating.`
+        );
+        return;
+      }
       const res = await generateUikitSpec({ doc, tech, components: selected });
       setSpec(res.content);
       setPath(res.path);
@@ -162,7 +174,7 @@ export function ExportWorkspace() {
               onClick={onGenerate}
               disabled={busy || selected.length === 0}
             >
-              {busy ? "Generating…" : "Generate UIKit spec (ТЗ)"}
+              {busy ? "Validating…" : "Validate & generate UIKit spec (ТЗ)"}
             </button>
             {spec && (
               <button className={btnGhostCls} onClick={() => setShow(true)}>
@@ -186,6 +198,38 @@ export function ExportWorkspace() {
             </div>
           )}
           {error && <div className="text-xs text-app-danger">Error: {error}</div>}
+
+          {lint && lint.findings.length > 0 && (
+            <div className="rounded-lg border border-app-border p-3 space-y-1.5">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-app-text">Validation</span>
+                <span className="text-app-muted">
+                  {lint.summary.errors} err · {lint.summary.warnings} warn
+                </span>
+              </div>
+              <ul className="space-y-1 max-h-40 overflow-auto scroll-thin">
+                {lint.findings.map((f, i) => (
+                  <li
+                    key={i}
+                    className={`text-xs ${
+                      f.severity === "error"
+                        ? "text-app-danger"
+                        : f.severity === "warning"
+                          ? "text-app-text"
+                          : "text-app-muted"
+                    }`}
+                  >
+                    <span className="uppercase text-[10px] font-semibold mr-1">{f.severity}</span>
+                    {f.path && <code className="font-mono text-[10px] mr-1">{f.path}</code>}
+                    {f.message}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {lint && lint.findings.length === 0 && (
+            <div className="text-xs text-app-ok">✓ Design validated — no issues.</div>
+          )}
         </aside>
       </div>
 
@@ -193,6 +237,7 @@ export function ExportWorkspace() {
         <CodeModal
           title="UIKIT-SPEC.md"
           filename="UIKIT-SPEC.md"
+          secondaryFilename="DESIGN.md"
           content={spec}
           onClose={() => setShow(false)}
         />

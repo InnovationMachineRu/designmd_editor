@@ -1,4 +1,5 @@
 import type { DesignDoc } from "../designmd/types";
+import { serializeDesignDoc } from "../designmd/serialize";
 import { getComponent, TARGET_TECHS } from "./catalog";
 
 /** Tech-specific guidance for consuming the design tokens. */
@@ -35,53 +36,6 @@ function table(headers: string[], rows: string[][]): string {
   const sep = `| ${headers.map(() => "---").join(" | ")} |`;
   const body = rows.map((r) => `| ${r.join(" | ")} |`).join("\n");
   return [head, sep, body].join("\n");
-}
-
-function tokenSummary(doc: DesignDoc): string {
-  const out: string[] = [];
-
-  const colors = Object.entries(doc.colors).slice(0, 60);
-  if (colors.length) {
-    out.push("### Colors\n");
-    out.push(table(["Token", "Value"], colors.map(([k, v]) => [`\`${k}\``, `\`${v}\``])));
-    out.push("");
-  }
-
-  const typo = Object.entries(doc.typography);
-  if (typo.length) {
-    out.push("### Typography\n");
-    out.push(
-      table(
-        ["Token", "Family", "Size", "Weight", "Line"],
-        typo.map(([k, t]) => [
-          `\`${k}\``,
-          t.fontFamily ?? "—",
-          t.fontSize ?? "—",
-          t.fontWeight ?? "—",
-          t.lineHeight ?? "—",
-        ])
-      )
-    );
-    out.push("");
-  }
-
-  const rounded = Object.entries(doc.rounded);
-  if (rounded.length) {
-    out.push("### Rounding\n");
-    out.push(table(["Token", "Value"], rounded.map(([k, v]) => [`\`${k}\``, `\`${v}\``])));
-    out.push("");
-  }
-
-  const spacing = Object.entries(doc.spacing);
-  if (spacing.length) {
-    out.push("### Spacing\n");
-    out.push(
-      table(["Token", "Value"], spacing.map(([k, v]) => [`\`${k}\``, `\`${String(v)}\``]))
-    );
-    out.push("");
-  }
-
-  return out.join("\n");
 }
 
 /** Escape a `|` so it does not break the markdown table layout. */
@@ -134,8 +88,11 @@ function componentSpec(id: string): string {
 }
 
 /**
- * Generate the UIKit technical spec (ТЗ) markdown from the saved design system,
- * the selected components, and the target technology.
+ * Generate the UIKit technical spec (ТЗ) as a **DESIGN.md-compatible** document:
+ * a valid design.md (YAML front-matter tokens + canonical body) produced by
+ * `serializeDesignDoc`, with the UIKit ТЗ appended as extra markdown sections.
+ * Because the design tokens live in the front-matter, the file validates and
+ * can be opened/downloaded as a DESIGN.md, while still carrying the full spec.
  */
 export function generateSpec(opts: {
   doc: DesignDoc;
@@ -149,35 +106,37 @@ export function generateSpec(opts: {
 
   const selected = components.filter((id) => getComponent(id));
 
-  const md: string[] = [];
-  md.push(`# UIKit Technical Specification — ${doc.name}`);
-  md.push("");
-  md.push(`> Generated from a DESIGN.md design system for **${techLabel}**.`);
-  if (techMeta) md.push(`> ${techMeta.note}`);
+  // Base document: a valid DESIGN.md (front-matter tokens + canonical body).
+  const md: string[] = [serializeDesignDoc(doc).trimEnd(), ""];
+
+  // UIKit ТЗ appended as additional body sections — keeps the file a valid
+  // design.md while documenting the component contract.
+  md.push("<!-- UIKit Technical Specification (ТЗ) — generated from this design system. -->");
   md.push("");
 
-  md.push("## 1. Overview");
+  md.push("## UIKit — Overview");
   md.push("");
   md.push(
-    `This UIKit implements **${selected.length} components** styled by the **${doc.name}** design system ` +
-      `(${Object.keys(doc.colors).length} colors, ${Object.keys(doc.typography).length} type scales, ` +
-      `${Object.keys(doc.rounded).length} rounding levels). Every component must bind its appearance to ` +
-      `the design tokens below rather than hard-coding values.`
+    `This UIKit implements **${selected.length} components** for **${techLabel}**, styled by the ` +
+      `**${doc.name}** design system (${Object.keys(doc.colors).length} colors, ` +
+      `${Object.keys(doc.typography).length} type scales, ${Object.keys(doc.rounded).length} rounding levels). ` +
+      "Every component must bind its appearance to the design tokens in the front-matter above " +
+      "rather than hard-coding values."
   );
+  if (techMeta) {
+    md.push("");
+    md.push(`> ${techMeta.note}`);
+  }
   md.push("");
 
-  md.push("## 2. Target technology");
+  md.push("## UIKit — Target technology");
   md.push("");
   md.push(`**${techLabel}**`);
   md.push("");
   md.push(guidance);
   md.push("");
 
-  md.push("## 3. Design tokens");
-  md.push("");
-  md.push(tokenSummary(doc));
-
-  md.push("## 4. Component requirements");
+  md.push("## UIKit — Component requirements");
   md.push("");
   md.push(
     "Each component below specifies its **behavior**, **states**, typed **input parameters**, " +
@@ -191,7 +150,7 @@ export function generateSpec(opts: {
     for (const id of selected) md.push(componentSpec(id));
   }
 
-  md.push("## 5. Acceptance criteria");
+  md.push("## UIKit — Acceptance criteria");
   md.push("");
   md.push("- [ ] Every component implements all listed states with token-bound styling.");
   md.push("- [ ] Each component exposes the documented input parameters with the listed types and defaults.");
@@ -203,5 +162,5 @@ export function generateSpec(opts: {
   md.push("- [ ] A demo page renders each component in all states.");
   md.push("");
 
-  return md.join("\n");
+  return md.join("\n").trimEnd() + "\n";
 }
