@@ -153,7 +153,7 @@ export function BrandbookWorkspace() {
         </div>
 
         <div className="min-h-0 p-4">
-          <PreviewPane />
+          <PreviewPane enableFonts />
         </div>
       </div>
     </div>

@@ -84,6 +84,11 @@ function tokenSummary(doc: DesignDoc): string {
   return out.join("\n");
 }
 
+/** Escape a `|` so it does not break the markdown table layout. */
+function cell(value: string): string {
+  return value.replace(/\|/g, "\\|");
+}
+
 function componentSpec(id: string): string {
   const comp = getComponent(id);
   if (!comp) return "";
@@ -92,13 +97,39 @@ function componentSpec(id: string): string {
   lines.push("");
   lines.push(comp.description);
   lines.push("");
+  lines.push(`**Behavior:** ${comp.behavior}`);
+  lines.push("");
   lines.push(`- **States:** ${comp.states.join(", ")}`);
-  lines.push(`- **Props / attributes:** ${comp.props.map((p) => `\`${p}\``).join(", ")}`);
   lines.push(
     `- **Token bindings:** ${comp.tokenRoles.map((t) => `\`{…${t}}\``).join(", ")}`
   );
   lines.push(`- **Accessibility:** ${comp.a11y.join("; ")}`);
   lines.push("");
+
+  lines.push("**Input parameters**");
+  lines.push("");
+  if (comp.params.length) {
+    lines.push(
+      table(
+        ["Parameter", "Type", "Default", "Description"],
+        comp.params.map((prm) => [
+          `\`${cell(prm.name)}\``,
+          `\`${cell(prm.type)}\``,
+          prm.default !== undefined ? `\`${cell(prm.default)}\`` : "—",
+          cell(prm.description),
+        ])
+      )
+    );
+  } else {
+    lines.push("_None._");
+  }
+  lines.push("");
+
+  lines.push("**Animations**");
+  lines.push("");
+  for (const a of comp.animations) lines.push(`- ${a}`);
+  lines.push("");
+
   return lines.join("\n");
 }
 
@@ -148,6 +179,11 @@ export function generateSpec(opts: {
 
   md.push("## 4. Component requirements");
   md.push("");
+  md.push(
+    "Each component below specifies its **behavior**, **states**, typed **input parameters**, " +
+      "**animations**, token bindings, and accessibility requirements. Implement every one to spec."
+  );
+  md.push("");
   if (selected.length === 0) {
     md.push("_No components selected._");
     md.push("");
@@ -158,6 +194,9 @@ export function generateSpec(opts: {
   md.push("## 5. Acceptance criteria");
   md.push("");
   md.push("- [ ] Every component implements all listed states with token-bound styling.");
+  md.push("- [ ] Each component exposes the documented input parameters with the listed types and defaults.");
+  md.push("- [ ] Documented behavior (interactions, focus, lifecycle, edge cases) is implemented.");
+  md.push("- [ ] Specified animations/transitions are implemented and respect `prefers-reduced-motion`.");
   md.push("- [ ] No hard-coded colors, radii, or font values — all derive from tokens.");
   md.push("- [ ] Accessibility requirements per component are met (roles, focus, keyboard).");
   md.push("- [ ] Light and dark palettes are supported via the token layer.");

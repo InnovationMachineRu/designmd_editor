@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type CSSProperties } from "react";
 import Link from "next/link";
 import { useEditor } from "@/lib/store";
-import {
-  CATALOG,
-  DEFAULT_SELECTION,
-  TARGET_TECHS,
-  ALL_COMPONENTS,
-} from "@/lib/uikit/catalog";
-import { generateUikitSpec } from "@/lib/api";
-import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
+import { CATALOG, ALL_COMPONENTS } from "@/lib/uikit/catalog";
+import { docToCssVars, color } from "@/lib/designmd/tokens";
 import { Stepper } from "@/components/wizard/Stepper";
-import { CodeModal } from "@/components/CodeModal";
+import { ThemeToggle } from "@/components/preview/ThemeToggle";
+import { COMPONENT_PREVIEWS, PreviewFallback } from "./previews";
 
 const miniBtn =
   "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border border-app-border text-app-muted hover:text-app-text hover:bg-app-panel-2 transition-colors";
@@ -22,20 +17,6 @@ export function UikitWorkspace() {
   const selected = useEditor((s) => s.selectedComponents);
   const toggle = useEditor((s) => s.toggleComponent);
   const setSelected = useEditor((s) => s.setSelectedComponents);
-  const tech = useEditor((s) => s.targetTech);
-  const setTech = useEditor((s) => s.setTargetTech);
-
-  const [busy, setBusy] = useState(false);
-  const [spec, setSpec] = useState<string | null>(null);
-  const [path, setPath] = useState<string | null>(null);
-  const [show, setShow] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Seed a sensible default selection on first visit.
-  useEffect(() => {
-    if (selected.length === 0) setSelected(DEFAULT_SELECTION);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const selectedSet = new Set(selected);
   const allIds = ALL_COMPONENTS.map((c) => c.id);
@@ -53,20 +34,11 @@ export function UikitWorkspace() {
     }
   };
 
-  const onGenerate = async () => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await generateUikitSpec({ doc, tech, components: selected });
-      setSpec(res.content);
-      setPath(res.path);
-      setShow(true);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
+  // Previews resolve concrete token values; the stage backdrop uses the doc's
+  // surface so each component sits on the design system's real background.
+  const stageVars = docToCssVars(doc) as CSSProperties;
+  const stageBg = color(doc, "surface", "#ffffff");
+  const stageInk = color(doc, "on-surface", "#16181d");
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -80,71 +52,98 @@ export function UikitWorkspace() {
         <div className="flex-1 flex justify-center">
           <Stepper current={3} />
         </div>
-        <Link href="/" className="text-sm text-app-muted hover:text-app-text">
-          ← Back to editor
-        </Link>
+        <div className="flex items-center gap-3 shrink-0">
+          <ThemeToggle />
+          <Link href="/export" className="text-sm font-medium text-app-accent hover:underline">
+            Next: Export →
+          </Link>
+        </div>
       </header>
 
-      <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
-        {/* Catalog */}
-        <div className="overflow-auto scroll-thin p-5 space-y-6 border-r border-app-border">
-          {/* Global header */}
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h1 className="text-lg font-semibold text-app-text">Choose UIKit components</h1>
-              <p className="text-sm text-app-muted mt-1">
-                Pick the components your kit needs. Selection plus the{" "}
-                <code className="font-mono">{doc.name}</code> tokens become the technical spec.
-              </p>
-            </div>
-            <div className="flex gap-1.5 shrink-0 pt-0.5">
-              <button
-                type="button"
-                className={miniBtn}
-                onClick={allSelected ? deselectAll : selectAll}
-              >
-                {allSelected ? "Deselect all" : "Select all"}
-              </button>
-            </div>
+      <div className="overflow-auto scroll-thin p-5 space-y-8">
+        {/* Intro */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-lg font-semibold text-app-text">UIKit components</h1>
+            <p className="text-sm text-app-muted mt-1 max-w-2xl">
+              Live React + TypeScript previews of every component, styled by the{" "}
+              <code className="font-mono">{doc.name}</code> tokens — toggle the theme to see
+              light/dark. Pick the ones your kit needs; generate the spec on the{" "}
+              <Link href="/export" className="text-app-accent hover:underline">Export</Link> step.
+            </p>
           </div>
+          <div className="flex flex-col items-end gap-1.5 shrink-0 pt-0.5">
+            <span className="text-xs text-app-muted">
+              {selected.length}/{ALL_COMPONENTS.length} selected
+            </span>
+            <button
+              type="button"
+              className={miniBtn}
+              onClick={allSelected ? deselectAll : selectAll}
+            >
+              {allSelected ? "Deselect all" : "Select all"}
+            </button>
+          </div>
+        </div>
 
-          {CATALOG.map((cat) => {
-            const groupIds = cat.components.map((c) => c.id);
-            const groupSelected = groupIds.filter((id) => selectedSet.has(id)).length;
-            const allInGroup = groupSelected === groupIds.length;
+        {CATALOG.map((cat) => {
+          const groupIds = cat.components.map((c) => c.id);
+          const groupSelected = groupIds.filter((id) => selectedSet.has(id)).length;
+          const allInGroup = groupSelected === groupIds.length;
 
-            return (
-              <section key={cat.id}>
-                <div className="flex items-center gap-2 mb-2">
-                  <h2 className="text-sm font-semibold text-app-text">{cat.label}</h2>
-                  <span className="text-xs text-app-muted">
-                    {groupSelected}/{groupIds.length}
-                  </span>
-                  <button
-                    type="button"
-                    className={miniBtn}
-                    onClick={() => toggleGroup(groupIds)}
-                  >
-                    {allInGroup ? "Deselect group" : "Select group"}
-                  </button>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                  {cat.components.map((comp) => {
-                    const on = selectedSet.has(comp.id);
-                    return (
-                      <button
-                        key={comp.id}
-                        type="button"
-                        onClick={() => toggle(comp.id)}
-                        className={`text-left rounded-lg border p-3 transition-colors ${
-                          on
-                            ? "border-app-accent bg-app-accent/10"
-                            : "border-app-border hover:border-app-accent/50"
-                        }`}
+          return (
+            <section key={cat.id}>
+              <div className="flex items-center gap-2 mb-3">
+                <h2 className="text-sm font-semibold text-app-text">{cat.label}</h2>
+                <span className="text-xs text-app-muted">
+                  {groupSelected}/{groupIds.length}
+                </span>
+                <button type="button" className={miniBtn} onClick={() => toggleGroup(groupIds)}>
+                  {allInGroup ? "Deselect group" : "Select group"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                {cat.components.map((comp) => {
+                  const on = selectedSet.has(comp.id);
+                  const Preview = COMPONENT_PREVIEWS[comp.id] ?? PreviewFallback;
+                  return (
+                    <div
+                      key={comp.id}
+                      role="button"
+                      tabIndex={0}
+                      aria-pressed={on}
+                      onClick={() => toggle(comp.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          toggle(comp.id);
+                        }
+                      }}
+                      className={`rounded-xl border overflow-hidden cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-app-accent ${
+                        on
+                          ? "border-app-accent"
+                          : "border-app-border hover:border-app-accent/50"
+                      }`}
+                    >
+                      {/* Live preview stage (illustrative — clicks pass through to the card) */}
+                      <div
+                        className="flex items-center justify-center p-5 min-h-[132px] border-b border-app-border/60"
+                        style={{ ...stageVars, background: stageBg, color: stageInk }}
                       >
+                        <div
+                          className="w-full flex items-center justify-center"
+                          style={{ pointerEvents: "none", userSelect: "none" }}
+                        >
+                          <Preview doc={doc} />
+                        </div>
+                      </div>
+
+                      {/* Meta + selection state */}
+                      <div className={`p-3 transition-colors ${on ? "bg-app-accent/10" : ""}`}>
                         <div className="flex items-center gap-2">
                           <span
-                            className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                            className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] shrink-0 ${
                               on
                                 ? "bg-app-accent border-app-accent text-white"
                                 : "border-app-border"
@@ -154,92 +153,16 @@ export function UikitWorkspace() {
                           </span>
                           <span className="text-sm font-medium text-app-text">{comp.name}</span>
                         </div>
-                        <p className="text-xs text-app-muted mt-1 line-clamp-2">
-                          {comp.description}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-
-        {/* Config rail */}
-        <aside className="p-5 space-y-5">
-          <div>
-            <h3 className="text-sm font-semibold text-app-text mb-2">Target technology</h3>
-            <div className="space-y-2">
-              {TARGET_TECHS.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => setTech(t.id)}
-                  className={`w-full text-left rounded-lg border p-3 transition-colors ${
-                    tech === t.id
-                      ? "border-app-accent bg-app-accent/10"
-                      : "border-app-border hover:border-app-accent/50"
-                  }`}
-                >
-                  <div className="text-sm font-medium text-app-text">{t.label}</div>
-                  <div className="text-xs text-app-muted mt-0.5">{t.note}</div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-lg border border-app-border p-3 text-xs text-app-muted space-y-1">
-            <div className="flex justify-between">
-              <span>Selected components</span>
-              <span className="text-app-text font-semibold">
-                {selected.length}/{ALL_COMPONENTS.length}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Design system</span>
-              <span className="text-app-text font-semibold">{doc.name}</span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <button
-              className={btnPrimaryCls}
-              onClick={onGenerate}
-              disabled={busy || selected.length === 0}
-            >
-              {busy ? "Generating…" : "Generate UIKit spec (ТЗ)"}
-            </button>
-            {spec && (
-              <button className={btnGhostCls} onClick={() => setShow(true)}>
-                View last spec
-              </button>
-            )}
-            <button
-              className={btnGhostCls}
-              onClick={() => setSelected(DEFAULT_SELECTION)}
-            >
-              Reset to defaults
-            </button>
-          </div>
-
-          {path && (
-            <div className="text-xs text-app-ok">
-              ✓ Written to <code className="font-mono">{path}</code>
-            </div>
-          )}
-          {error && <div className="text-xs text-app-danger">Error: {error}</div>}
-        </aside>
+                        <p className="text-xs text-app-muted mt-1 line-clamp-2">{comp.description}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })}
       </div>
-
-      {show && spec && (
-        <CodeModal
-          title="UIKIT-SPEC.md"
-          filename="UIKIT-SPEC.md"
-          content={spec}
-          onClose={() => setShow(false)}
-        />
-      )}
     </div>
   );
 }

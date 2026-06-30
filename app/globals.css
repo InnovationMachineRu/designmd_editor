@@ -96,6 +96,13 @@ body::before {
   border-radius: 9999px;
 }
 
+/* Spinner used by the UIKit component previews. */
+@keyframes dmd-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* The preview surface consumes design-document tokens projected as
    CSS custom properties (see lib/designmd/tokens.ts). */
 .dmd-preview {

@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import { DEFAULT_SELECTION } from "./uikit/catalog";
 import {
   DEFAULT_BREAKPOINTS,
   type BrandbookData,
@@ -332,7 +333,7 @@ export const useEditor = create<EditorState>()(
     customPresets: {},
     highlight: null,
     brandbook: initialBrandbook,
-    selectedComponents: [],
+    selectedComponents: DEFAULT_SELECTION,
     targetTech: "react",
     settingsCollapsed: false,
     previewFullscreen: false,
@@ -776,6 +777,8 @@ export const useEditor = create<EditorState>()(
       partialize: (s) => ({
         customPresets: s.customPresets,
         brandbook: s.brandbook,
+        selectedComponents: s.selectedComponents,
+        targetTech: s.targetTech,
       }),
       // Backfill defaults for any brand sections missing from older persisted
       // state, so selectors never have to synthesize fresh objects (which would
