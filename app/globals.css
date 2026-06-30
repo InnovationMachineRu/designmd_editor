@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+/* App chrome theme tokens (the editor UI itself — independent of the design
+   document being edited, which is rendered with its own CSS variables inside
+   the preview pane). */
+@theme {
+  --color-app-bg: #0d1117;
+  --color-app-panel: #161b22;
+  --color-app-panel-2: #1c2430;
+  --color-app-border: #2a3240;
+  --color-app-text: #e6edf3;
+  --color-app-muted: #8b949e;
+  --color-app-accent: #4f8cff;
+  --color-app-accent-2: #7c5cff;
+  --color-app-danger: #ff6b6b;
+  --color-app-warn: #ffb454;
+  --color-app-ok: #3fb950;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-app-bg);
+  color: var(--color-app-text);
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Inter, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Thin custom scrollbars for the editor panels */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-app-border) transparent;
+}
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: var(--color-app-border);
+  border-radius: 9999px;
+}
+
+/* The preview surface consumes design-document tokens projected as
+   CSS custom properties (see lib/designmd/tokens.ts). */
+.dmd-preview {
+  background: var(--dmd-color-background, #ffffff);
+  color: var(--dmd-color-on-background, #111111);
+  transition: background 0.2s ease, color 0.2s ease;
+}
