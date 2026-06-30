@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { FontLoader } from "@/components/FontLoader";
 import { Stepper } from "@/components/wizard/Stepper";
 import { PreviewPane } from "@/components/preview/PreviewPane";
 import { ColorWheel } from "./ColorWheel";
@@ -101,11 +102,14 @@ const SECTIONS: SectionDef[] = [
 export function BrandbookWorkspace() {
   return (
     <div className="h-screen flex flex-col">
+      <FontLoader />
       {/* Top bar */}
-      <header className="flex items-center gap-4 px-5 h-14 border-b border-app-border shrink-0">
-        <div className="font-bold text-app-text">
+      <header className="flex items-center gap-4 px-5 h-16 border-b border-app-border shrink-0">
+        <div className="font-display font-semibold text-[15px] tracking-tight text-app-text shrink-0">
           DESIGN<span className="text-app-accent">.md</span>
-          <span className="text-app-muted font-normal text-sm ml-2">Brandbook</span>
+          <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
+            Brandbook
+          </span>
         </div>
         <div className="flex-1 flex justify-center">
           <Stepper current={1} />

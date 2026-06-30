@@ -14,6 +14,9 @@ import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
 import { Stepper } from "@/components/wizard/Stepper";
 import { CodeModal } from "@/components/CodeModal";
 
+const miniBtn =
+  "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] border border-app-border text-app-muted hover:text-app-text hover:bg-app-panel-2 transition-colors";
+
 export function UikitWorkspace() {
   const doc = useEditor((s) => s.docs[s.theme]);
   const selected = useEditor((s) => s.selectedComponents);
@@ -35,6 +38,20 @@ export function UikitWorkspace() {
   }, []);
 
   const selectedSet = new Set(selected);
+  const allIds = ALL_COMPONENTS.map((c) => c.id);
+  const allSelected = allIds.every((id) => selectedSet.has(id));
+
+  const selectAll = () => setSelected(allIds);
+  const deselectAll = () => setSelected([]);
+
+  const toggleGroup = (groupIds: string[]) => {
+    const allIn = groupIds.every((id) => selectedSet.has(id));
+    if (allIn) {
+      setSelected(selected.filter((id) => !groupIds.includes(id)));
+    } else {
+      setSelected([...new Set([...selected, ...groupIds])]);
+    }
+  };
 
   const onGenerate = async () => {
     setBusy(true);
@@ -53,10 +70,12 @@ export function UikitWorkspace() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="flex items-center gap-4 px-5 h-14 border-b border-app-border shrink-0">
-        <div className="font-bold text-app-text">
+      <header className="flex items-center gap-4 px-5 h-16 border-b border-app-border shrink-0">
+        <div className="font-display font-semibold text-[15px] tracking-tight text-app-text shrink-0">
           DESIGN<span className="text-app-accent">.md</span>
-          <span className="text-app-muted font-normal text-sm ml-2">UIKit</span>
+          <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
+            UIKit
+          </span>
         </div>
         <div className="flex-1 flex justify-center">
           <Stepper current={3} />
@@ -69,58 +88,82 @@ export function UikitWorkspace() {
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_320px]">
         {/* Catalog */}
         <div className="overflow-auto scroll-thin p-5 space-y-6 border-r border-app-border">
-          <div>
-            <h1 className="text-lg font-semibold text-app-text">Choose UIKit components</h1>
-            <p className="text-sm text-app-muted mt-1">
-              Pick the components your kit needs. Selection plus the{" "}
-              <code className="font-mono">{doc.name}</code> tokens become the technical spec.
-            </p>
+          {/* Global header */}
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-lg font-semibold text-app-text">Choose UIKit components</h1>
+              <p className="text-sm text-app-muted mt-1">
+                Pick the components your kit needs. Selection plus the{" "}
+                <code className="font-mono">{doc.name}</code> tokens become the technical spec.
+              </p>
+            </div>
+            <div className="flex gap-1.5 shrink-0 pt-0.5">
+              <button
+                type="button"
+                className={miniBtn}
+                onClick={allSelected ? deselectAll : selectAll}
+              >
+                {allSelected ? "Deselect all" : "Select all"}
+              </button>
+            </div>
           </div>
 
-          {CATALOG.map((cat) => (
-            <section key={cat.id}>
-              <div className="flex items-center gap-2 mb-2">
-                <h2 className="text-sm font-semibold text-app-text">{cat.label}</h2>
-                <span className="text-xs text-app-muted">
-                  {cat.components.filter((c) => selectedSet.has(c.id)).length}/
-                  {cat.components.length}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                {cat.components.map((comp) => {
-                  const on = selectedSet.has(comp.id);
-                  return (
-                    <button
-                      key={comp.id}
-                      type="button"
-                      onClick={() => toggle(comp.id)}
-                      className={`text-left rounded-lg border p-3 transition-colors ${
-                        on
-                          ? "border-app-accent bg-app-accent/10"
-                          : "border-app-border hover:border-app-accent/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
-                            on
-                              ? "bg-app-accent border-app-accent text-white"
-                              : "border-app-border"
-                          }`}
-                        >
-                          {on ? "✓" : ""}
-                        </span>
-                        <span className="text-sm font-medium text-app-text">{comp.name}</span>
-                      </div>
-                      <p className="text-xs text-app-muted mt-1 line-clamp-2">
-                        {comp.description}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+          {CATALOG.map((cat) => {
+            const groupIds = cat.components.map((c) => c.id);
+            const groupSelected = groupIds.filter((id) => selectedSet.has(id)).length;
+            const allInGroup = groupSelected === groupIds.length;
+
+            return (
+              <section key={cat.id}>
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-sm font-semibold text-app-text">{cat.label}</h2>
+                  <span className="text-xs text-app-muted">
+                    {groupSelected}/{groupIds.length}
+                  </span>
+                  <button
+                    type="button"
+                    className={miniBtn}
+                    onClick={() => toggleGroup(groupIds)}
+                  >
+                    {allInGroup ? "Deselect group" : "Select group"}
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                  {cat.components.map((comp) => {
+                    const on = selectedSet.has(comp.id);
+                    return (
+                      <button
+                        key={comp.id}
+                        type="button"
+                        onClick={() => toggle(comp.id)}
+                        className={`text-left rounded-lg border p-3 transition-colors ${
+                          on
+                            ? "border-app-accent bg-app-accent/10"
+                            : "border-app-border hover:border-app-accent/50"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] ${
+                              on
+                                ? "bg-app-accent border-app-accent text-white"
+                                : "border-app-border"
+                            }`}
+                          >
+                            {on ? "✓" : ""}
+                          </span>
+                          <span className="text-sm font-medium text-app-text">{comp.name}</span>
+                        </div>
+                        <p className="text-xs text-app-muted mt-1 line-clamp-2">
+                          {comp.description}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
         </div>
 
         {/* Config rail */}

@@ -37,8 +37,8 @@ export function ColorField({
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
-          className="w-7 h-7 rounded-md border border-app-border shrink-0"
-          style={{ background: value }}
+          className="w-9 h-9 rounded-lg border border-app-border shrink-0 transition-transform hover:scale-105"
+          style={{ background: value, boxShadow: "inset 0 0 0 1px rgba(255,255,255,0.06)" }}
           title="Pick color"
           aria-label="Pick color"
         />

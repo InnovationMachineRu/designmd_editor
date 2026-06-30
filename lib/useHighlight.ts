@@ -1,8 +1,32 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useEditor } from "./store";
 import type { HighlightTarget } from "./designmd/types";
+import { AccordionExpandCtx } from "./accordionCtx";
+
+export { AccordionExpandCtx } from "./accordionCtx";
+export type { AccordionExpandSignal } from "./accordionCtx";
+
+/**
+ * Managed open state for an accordion that respects a parent-level
+ * expand/collapse-all signal from AccordionExpandCtx.
+ */
+export function useAccordionOpen(defaultOpen = false): [boolean, (v: boolean) => void] {
+  const signal = useContext(AccordionExpandCtx);
+  const [open, setOpen] = useState(defaultOpen);
+  const prevV = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (signal === null) return;
+    if (prevV.current === signal.v) return;
+    prevV.current = signal.v;
+    setOpen(signal.open);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [signal?.v]);
+
+  return [open, setOpen];
+}
 
 /**
  * Wiring for an editor block to react to a preview selection. When the current
@@ -17,10 +41,9 @@ export function useHighlight(
   const targeted = highlight?.group === group ? highlight : null;
   const activeKey = targeted?.key ?? null;
 
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useAccordionOpen(defaultOpen);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Force-open and scroll when a matching token is selected in the preview.
   useEffect(() => {
     if (!activeKey) return;
     setOpen(true);
@@ -31,6 +54,7 @@ export function useHighlight(
       el?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
     return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeKey]);
 
   return { open, setOpen, activeKey, containerRef };

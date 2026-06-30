@@ -2,19 +2,27 @@
 
 /* App chrome theme tokens (the editor UI itself — independent of the design
    document being edited, which is rendered with its own CSS variables inside
-   the preview pane). */
+   the preview pane).
+
+   Direction: "achromatic instrument". The tool builds COLOR systems, so the
+   chrome is a neutral graphite console — the only chroma in the room belongs to
+   the user's tokens and the live preview. A single warm brass accent marks the
+   active path and the primary action, like the lit indicator on studio
+   hardware. Semantics stay muted (no neon) to respect that restraint. */
 @theme {
-  --color-app-bg: #0d1117;
-  --color-app-panel: #161b22;
-  --color-app-panel-2: #1c2430;
-  --color-app-border: #2a3240;
-  --color-app-text: #e6edf3;
-  --color-app-muted: #8b949e;
-  --color-app-accent: #4f8cff;
-  --color-app-accent-2: #7c5cff;
-  --color-app-danger: #ff6b6b;
-  --color-app-warn: #ffb454;
-  --color-app-ok: #3fb950;
+  --color-app-bg: #0c0d0f;
+  --color-app-panel: #141518;
+  --color-app-panel-2: #1d1f24;
+  --color-app-border: #2a2c32;
+  --color-app-text: #ededee;
+  --color-app-muted: #8a8c92;
+  --color-app-accent: #e0a23b; /* brass — the one warm signal */
+  --color-app-accent-2: #c9852a; /* deeper brass (hover) */
+  --color-app-danger: #e5645f;
+  --color-app-warn: #e08a3a;
+  --color-app-ok: #5bb97d;
+
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
@@ -32,6 +40,46 @@ body {
 
 * {
   box-sizing: border-box;
+}
+
+/* Signature: a hairline "lit edge" of brass across the very top of the app. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-app-accent) 18%,
+    var(--color-app-accent) 82%,
+    transparent
+  );
+  opacity: 0.6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+/* Display face for the chrome's headings/wordmark (Space Grotesk). */
+.font-display {
+  font-family: var(--font-display);
+  font-feature-settings: "ss01";
+}
+
+/* One consistent keyboard-focus affordance in brass. */
+:focus-visible {
+  outline: 2px solid var(--color-app-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
 }
 
 /* Thin custom scrollbars for the editor panels */

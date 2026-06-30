@@ -8,31 +8,40 @@ const STEPS = [
   { n: 3, label: "UIKit components", href: "/uikit" },
 ];
 
+/**
+ * Top-level navigation as a segmented control. The active segment lifts onto a
+ * raised panel with a brass underline — the one lit indicator in the chrome.
+ */
 export function Stepper({ current }: { current: 1 | 2 | 3 }) {
   return (
-    <nav className="flex items-center gap-3">
-      {STEPS.map((s, i) => (
-        <div key={s.n} className="flex items-center gap-3">
+    <nav className="flex items-center gap-1 p-1 rounded-xl border border-app-border bg-app-panel-2/40">
+      {STEPS.map((s) => {
+        const active = s.n === current;
+        return (
           <Link
+            key={s.n}
             href={s.href}
-            className={`flex items-center gap-2 text-sm transition-colors ${
-              s.n === current ? "text-app-text" : "text-app-muted hover:text-app-text"
+            aria-current={active ? "page" : undefined}
+            className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              active
+                ? "bg-app-panel text-app-text shadow-sm"
+                : "text-app-muted hover:text-app-text"
             }`}
           >
             <span
-              className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-semibold ${
-                s.n === current
-                  ? "bg-app-accent text-white"
-                  : "border border-app-border text-app-muted"
+              className={`font-display text-xs tabular-nums ${
+                active ? "text-app-accent" : "text-app-muted/70"
               }`}
             >
-              {s.n}
+              {String(s.n).padStart(2, "0")}
             </span>
-            <span className="hidden sm:inline">{s.label}</span>
+            <span className="hidden sm:inline font-display tracking-tight">{s.label}</span>
+            {active && (
+              <span className="absolute left-3 right-3 -bottom-px h-0.5 rounded-full bg-app-accent" />
+            )}
           </Link>
-          {i < STEPS.length - 1 && <span className="text-app-border">→</span>}
-        </div>
-      ))}
+        );
+      })}
     </nav>
   );
 }

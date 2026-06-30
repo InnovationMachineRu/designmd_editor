@@ -281,6 +281,11 @@ export interface EditorState {
   setSettingsCollapsed: (v: boolean) => void;
   setPreviewFullscreen: (v: boolean) => void;
   setPreviewDevice: (d: string) => void;
+
+  // --- custom font URLs (ephemeral, cleared on refresh) ---
+  customFontUrls: string[];
+  addCustomFontUrl: (url: string) => void;
+  removeCustomFontUrl: (url: string) => void;
 }
 
 const initialDocs = {
@@ -332,6 +337,7 @@ export const useEditor = create<EditorState>()(
     settingsCollapsed: false,
     previewFullscreen: false,
     previewDevice: "fit",
+    customFontUrls: [],
 
     active: () => get().docs[get().theme],
 
@@ -751,6 +757,15 @@ export const useEditor = create<EditorState>()(
     setSettingsCollapsed: (v) => set({ settingsCollapsed: v }),
     setPreviewFullscreen: (v) => set({ previewFullscreen: v }),
     setPreviewDevice: (d) => set({ previewDevice: d }),
+
+    addCustomFontUrl: (url) =>
+      set((s) => ({
+        customFontUrls: s.customFontUrls.includes(url)
+          ? s.customFontUrls
+          : [...s.customFontUrls, url],
+      })),
+    removeCustomFontUrl: (url) =>
+      set((s) => ({ customFontUrls: s.customFontUrls.filter((u) => u !== url) })),
   };
     },
     {

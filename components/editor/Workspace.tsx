@@ -58,15 +58,17 @@ export function Workspace() {
   return (
     <div className="h-screen flex flex-col">
       {/* Top bar */}
-      <header className="flex items-center gap-4 px-5 h-14 border-b border-app-border shrink-0">
-        <div className="font-bold text-app-text">
+      <header className="flex items-center gap-4 px-5 h-16 border-b border-app-border shrink-0">
+        <div className="font-display font-semibold text-[15px] tracking-tight text-app-text shrink-0">
           DESIGN<span className="text-app-accent">.md</span>
-          <span className="text-app-muted font-normal text-sm ml-2">editor</span>
+          <span className="text-app-muted font-sans font-normal text-xs ml-2 align-middle">
+            token editor
+          </span>
         </div>
         <div className="flex-1 flex justify-center">
           <Stepper current={2} />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button className={btnGhostCls} onClick={() => setShowImport(true)} disabled={busy !== null}>
             Import
           </button>
