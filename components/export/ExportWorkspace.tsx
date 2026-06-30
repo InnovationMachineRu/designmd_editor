@@ -13,6 +13,7 @@ import type { DesignDoc, LintResult } from "@/lib/designmd/types";
 import { generateUikitSpec, validateDesign } from "@/lib/api";
 import { ALL_COMPONENTS, TARGET_TECHS } from "@/lib/uikit/catalog";
 import { Stepper } from "@/components/wizard/Stepper";
+import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { CodePanel } from "@/components/preview/CodePanel";
 import { CodeModal } from "@/components/CodeModal";
 import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
@@ -95,6 +96,7 @@ export function ExportWorkspace() {
         <div className="flex-1 flex justify-center">
           <Stepper current={4} />
         </div>
+        <ChromeThemeSwitcher />
         <Link href="/uikit" className="text-sm text-app-muted hover:text-app-text">
           ← Back to UIKit
         </Link>

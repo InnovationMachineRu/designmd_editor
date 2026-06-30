@@ -153,7 +153,7 @@ export function PreviewPane({ enableFonts = false }: { enableFonts?: boolean }) 
                   type="button"
                   onClick={onLoadFont}
                   disabled={!fontInput.trim().startsWith("https://")}
-                  className="px-3 py-1.5 rounded-lg bg-app-accent text-app-bg text-xs font-semibold hover:bg-app-accent-2 transition-colors disabled:opacity-40"
+                  className="px-3 py-1.5 rounded-lg bg-app-accent text-app-on-accent text-xs font-semibold hover:bg-app-accent-2 transition-colors disabled:opacity-40"
                 >
                   Load
                 </button>

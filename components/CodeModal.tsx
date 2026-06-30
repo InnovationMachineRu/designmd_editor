@@ -37,11 +37,11 @@ export function CodeModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-app-scrim flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
-        className="bg-app-panel border border-app-border rounded-xl w-full max-w-3xl max-h-[80vh] flex flex-col"
+        className="bg-app-panel border border-app-border rounded-xl shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 px-4 py-3 border-b border-app-border">

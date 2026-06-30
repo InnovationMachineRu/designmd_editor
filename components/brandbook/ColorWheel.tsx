@@ -148,7 +148,7 @@ export function ColorWheel() {
               onClick={() => setScheme(sc.id)}
               className={`px-2.5 py-1 rounded-md text-xs font-medium border transition-colors ${
                 brandbook.scheme === sc.id
-                  ? "bg-app-accent text-white border-app-accent"
+                  ? "bg-app-accent text-app-on-accent border-app-accent"
                   : "border-app-border text-app-muted hover:text-app-text hover:bg-app-panel-2"
               }`}
               title={`${sc.count}-color scheme`}

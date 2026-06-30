@@ -58,7 +58,7 @@ export function FontManager() {
             onClick={() => setCat(c.id)}
             className={`px-2 py-0.5 rounded-full text-xs border transition-colors ${
               cat === c.id
-                ? "bg-app-accent text-white border-app-accent"
+                ? "bg-app-accent text-app-on-accent border-app-accent"
                 : "border-app-border text-app-muted hover:text-app-text"
             }`}
           >

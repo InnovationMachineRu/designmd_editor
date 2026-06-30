@@ -6,6 +6,7 @@ import { useEditor } from "@/lib/store";
 import { CATALOG, ALL_COMPONENTS } from "@/lib/uikit/catalog";
 import { docToCssVars, color } from "@/lib/designmd/tokens";
 import { Stepper } from "@/components/wizard/Stepper";
+import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { ThemeToggle } from "@/components/preview/ThemeToggle";
 import { COMPONENT_PREVIEWS, PreviewFallback } from "./previews";
 
@@ -52,6 +53,7 @@ export function UikitWorkspace() {
         <div className="flex-1 flex justify-center">
           <Stepper current={3} />
         </div>
+        <ChromeThemeSwitcher />
         <div className="flex items-center gap-3 shrink-0">
           <ThemeToggle />
           <Link href="/export" className="text-sm font-medium text-app-accent hover:underline">
@@ -145,7 +147,7 @@ export function UikitWorkspace() {
                           <span
                             className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] shrink-0 ${
                               on
-                                ? "bg-app-accent border-app-accent text-white"
+                                ? "bg-app-accent border-app-accent text-app-on-accent"
                                 : "border-app-border"
                             }`}
                           >

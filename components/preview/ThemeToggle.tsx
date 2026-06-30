@@ -16,7 +16,7 @@ export function ThemeToggle() {
           type="button"
           onClick={() => setTheme(m)}
           className={`px-3 py-1 rounded-md text-xs font-medium capitalize transition-colors ${
-            theme === m ? "bg-app-accent text-white" : "text-app-muted hover:text-app-text"
+            theme === m ? "bg-app-accent text-app-on-accent" : "text-app-muted hover:text-app-text"
           }`}
         >
           {m === "light" ? "☀ Light" : "🌙 Dark"}

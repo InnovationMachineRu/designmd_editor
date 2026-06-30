@@ -24,7 +24,7 @@ function Segment<T extends string>({
           type="button"
           onClick={() => onChange(o.v)}
           className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-            value === o.v ? "bg-app-accent text-white" : "text-app-muted hover:text-app-text"
+            value === o.v ? "bg-app-accent text-app-on-accent" : "text-app-muted hover:text-app-text"
           }`}
         >
           {o.label}

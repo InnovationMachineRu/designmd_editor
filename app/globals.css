@@ -4,25 +4,68 @@
    document being edited, which is rendered with its own CSS variables inside
    the preview pane).
 
-   Direction: "achromatic instrument". The tool builds COLOR systems, so the
-   chrome is a neutral graphite console — the only chroma in the room belongs to
-   the user's tokens and the live preview. A single warm brass accent marks the
-   active path and the primary action, like the lit indicator on studio
-   hardware. Semantics stay muted (no neon) to respect that restraint. */
+   Direction: "Studio Daylight". A cool, airy light shell — near-white canvas,
+   crisp white panels, a fresh teal accent for the active path and primary
+   action, and a warm amber as a creative secondary (the duotone top edge). The
+   chrome stays calm so the only loud chroma still belongs to the user's tokens
+   and the live preview. Semantics are tuned for WCAG AA on the light surface. */
 @theme {
-  --color-app-bg: #0c0d0f;
-  --color-app-panel: #141518;
-  --color-app-panel-2: #1d1f24;
-  --color-app-border: #2a2c32;
-  --color-app-text: #ededee;
-  --color-app-muted: #8a8c92;
-  --color-app-accent: #e0a23b; /* brass — the one warm signal */
-  --color-app-accent-2: #c9852a; /* deeper brass (hover) */
-  --color-app-danger: #e5645f;
-  --color-app-warn: #e08a3a;
-  --color-app-ok: #5bb97d;
+  --color-app-bg: #f4f6fa; /* cool light canvas */
+  --color-app-panel: #ffffff; /* crisp white */
+  --color-app-panel-2: #eef1f7; /* raised */
+  --color-app-border: #dde3ec; /* cool hairline */
+  --color-app-text: #17202b; /* slate ink */
+  --color-app-muted: #5b6573; /* AA on white & canvas */
+  --color-app-accent: #0a7d78; /* deep fresh teal — the one lit signal */
+  --color-app-accent-2: #086a66; /* deeper teal (hover) */
+  --color-app-on-accent: #ffffff; /* text/ink on accent fills */
+  --color-app-danger: #d92d20;
+  --color-app-warn: #b5740c; /* deep amber — legible as inline status text */
+  --color-app-ok: #0f9d58;
+  --color-app-scrim: rgba(23, 32, 43, 0.38); /* modal backdrop (slate ink) */
 
   --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Dark theme · "Studio Midnight" ─────────────────────────────────────────
+   The dark counterpart of Studio Daylight: the same teal identity on a deep
+   slate canvas. The accent brightens so it stays lit, and on-accent flips to a
+   dark ink (white would glare on bright teal). Applied when the chrome theme is
+   explicitly Dark, or System + the OS prefers dark. The `data-theme` attribute
+   is set on <html> (= :root) by lib/chromeTheme.ts; `:root[data-theme=…]`
+   (specificity 0,2,0) outranks the @theme `:root` light defaults. */
+:root[data-theme="dark"] {
+  --color-app-bg: #0f141a;
+  --color-app-panel: #161d25;
+  --color-app-panel-2: #1f2832;
+  --color-app-border: #2c3742;
+  --color-app-text: #e7edf3;
+  --color-app-muted: #94a1b0;
+  --color-app-accent: #2dd4bf; /* bright teal — stays lit on dark */
+  --color-app-accent-2: #14b8a6; /* hover (deeper) */
+  --color-app-on-accent: #07211f; /* dark ink on bright teal */
+  --color-app-danger: #f87171;
+  --color-app-warn: #fbbf24;
+  --color-app-ok: #34d399;
+  --color-app-scrim: rgba(2, 6, 10, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme="system"] {
+    --color-app-bg: #0f141a;
+    --color-app-panel: #161d25;
+    --color-app-panel-2: #1f2832;
+    --color-app-border: #2c3742;
+    --color-app-text: #e7edf3;
+    --color-app-muted: #94a1b0;
+    --color-app-accent: #2dd4bf;
+    --color-app-accent-2: #14b8a6;
+    --color-app-on-accent: #07211f;
+    --color-app-danger: #f87171;
+    --color-app-warn: #fbbf24;
+    --color-app-ok: #34d399;
+    --color-app-scrim: rgba(2, 6, 10, 0.6);
+  }
 }
 
 html,
@@ -42,20 +85,21 @@ body {
   box-sizing: border-box;
 }
 
-/* Signature: a hairline "lit edge" of brass across the very top of the app. */
+/* Signature: a hairline "lit edge" across the very top of the app — a creative
+   teal→amber duotone, the one bit of warmth meeting the cool teal accent. */
 body::before {
   content: "";
   position: fixed;
   inset: 0 0 auto 0;
-  height: 1px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     transparent,
     var(--color-app-accent) 18%,
-    var(--color-app-accent) 82%,
+    #f2994a 82%,
     transparent
   );
-  opacity: 0.6;
+  opacity: 0.55;
   z-index: 50;
   pointer-events: none;
 }

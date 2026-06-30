@@ -15,6 +15,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Set the chrome theme on <html> before paint (no flash). Mirrors
+            lib/chromeTheme.ts; defaults to "system". */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('dmd-chrome-theme');document.documentElement.setAttribute('data-theme',t==='light'||t==='dark'?t:'system');}catch(e){document.documentElement.setAttribute('data-theme','system');}})();`,
+          }}
+        />
         {/* Preview fonts used by the built-in presets (Inter, Roboto, Poppins). */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

@@ -20,7 +20,7 @@ export function DeviceSelector() {
           title={d.width ? `${d.width}px` : "Full width"}
           onClick={() => setDevice(d.id)}
           className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors whitespace-nowrap ${
-            device === d.id ? "bg-app-accent text-white" : "text-app-muted hover:text-app-text"
+            device === d.id ? "bg-app-accent text-app-on-accent" : "text-app-muted hover:text-app-text"
           }`}
         >
           {d.label}

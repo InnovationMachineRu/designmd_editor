@@ -55,6 +55,12 @@ export const IconSun = (
     <path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M19 5l-1.5 1.5M6.5 17.5 5 19" />
   </>
 );
+export const IconMonitor = (
+  <>
+    <rect x="3" y="4" width="18" height="13" rx="2" />
+    <path d="M8 21h8M12 17v4" />
+  </>
+);
 export const IconTag = (
   <>
     <path d="M3 11V4h7l11 11-7 7L3 11Z" />

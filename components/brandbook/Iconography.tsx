@@ -52,7 +52,7 @@ export function Iconography() {
             onClick={() => setIconStyle({ corner: c })}
             className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${
               icons.corner === c
-                ? "bg-app-accent text-white border-app-accent"
+                ? "bg-app-accent text-app-on-accent border-app-accent"
                 : "border-app-border text-app-muted hover:text-app-text"
             }`}
           >

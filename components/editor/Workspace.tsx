@@ -7,6 +7,7 @@ import { saveDesign, validateDesign } from "@/lib/api";
 import type { LintResult } from "@/lib/designmd/types";
 import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
 import { Stepper } from "@/components/wizard/Stepper";
+import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { LintPanel } from "@/components/LintPanel";
 import { CodeModal } from "@/components/CodeModal";
 import { ImportDialog } from "@/components/ImportDialog";
@@ -68,6 +69,7 @@ export function Workspace() {
         <div className="flex-1 flex justify-center">
           <Stepper current={2} />
         </div>
+        <ChromeThemeSwitcher />
         <div className="flex items-center gap-2 shrink-0">
           <button className={btnGhostCls} onClick={() => setShowImport(true)} disabled={busy !== null}>
             Import

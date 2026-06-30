@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { FontLoader } from "@/components/FontLoader";
 import { Stepper } from "@/components/wizard/Stepper";
+import { ChromeThemeSwitcher } from "@/components/ui/ChromeThemeSwitcher";
 import { PreviewPane } from "@/components/preview/PreviewPane";
 import { ColorWheel } from "./ColorWheel";
 import { SchemePanel } from "./SchemePanel";
@@ -114,6 +115,7 @@ export function BrandbookWorkspace() {
         <div className="flex-1 flex justify-center">
           <Stepper current={1} />
         </div>
+        <ChromeThemeSwitcher />
         <Link href="/" className="text-sm text-app-accent hover:underline font-medium">
           Next: Design system →
         </Link>

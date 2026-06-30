@@ -12,8 +12,8 @@ export const selectCls =
 export const btnCls =
   "inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed";
 
-// Primary action: brass key with ink text — the one lit control.
-export const btnPrimaryCls = `${btnCls} bg-app-accent text-app-bg font-semibold hover:bg-app-accent-2 active:translate-y-px`;
+// Primary action: teal key with white ink — the one lit control.
+export const btnPrimaryCls = `${btnCls} bg-app-accent text-app-on-accent font-semibold shadow-sm hover:bg-app-accent-2 active:translate-y-px`;
 
 export const btnGhostCls = `${btnCls} border border-app-border text-app-text hover:bg-app-panel-2 hover:border-app-muted/40`;
 
