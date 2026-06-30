@@ -1,6 +1,11 @@
 import { DEFAULT_BREAKPOINTS, type DesignDoc } from "../designmd/types";
 import { serializeDesignDoc } from "../designmd/serialize";
-import { getComponent, TARGET_TECHS, uikitYaml } from "./catalog";
+import {
+  getComponent,
+  TARGET_TECHS,
+  uikitYaml,
+  catalogComponentsBlock,
+} from "./catalog";
 import { getLayout, layoutsYaml } from "../layouts/catalog";
 
 /** Tech-specific guidance for consuming the design tokens. */
@@ -79,6 +84,25 @@ function componentSpec(id: string): string {
     lines.push("_None._");
   }
   lines.push("");
+
+  if (comp.variants?.length) {
+    lines.push("**Variants**");
+    lines.push("");
+    lines.push(
+      table(
+        ["Variant", "Key", "Description", "Token bindings"],
+        comp.variants.map((v) => [
+          cell(v.name),
+          `\`${comp.id}-${v.id}\``,
+          cell(v.description),
+          Object.entries(v.tokens)
+            .map(([k, val]) => `\`${k}: ${cell(String(val))}\``)
+            .join(", ") || "—",
+        ])
+      )
+    );
+    lines.push("");
+  }
 
   lines.push("**Animations**");
   lines.push("");
@@ -190,6 +214,10 @@ export function generateSpec(opts: {
   // generated DESIGN.md carries them under x-design-md (selected-only).
   const docForExport: DesignDoc = {
     ...doc,
+    // Every selected component (+ its variants/states) lands in the `components`
+    // YAML block. Catalog defaults first; user-tuned `doc.components` wins on any
+    // key collision.
+    components: { ...catalogComponentsBlock(selected), ...doc.components },
     uikit: uikitYaml(selected, tech),
     layouts: layoutsYaml(selectedLayouts),
   };
@@ -222,6 +250,46 @@ export function generateSpec(opts: {
   md.push(`**${techLabel}**`);
   md.push("");
   md.push(guidance);
+  md.push("");
+
+  md.push("## UIKit — Variants");
+  md.push("");
+  md.push(
+    "Variants are **named, token-bound style sets** layered over a component's base " +
+      "styling. Define them as additional `components` entries in the front-matter — " +
+      "never as hard-coded CSS — so every variant stays bound to the design tokens."
+  );
+  md.push("");
+  md.push("**How to create a variant**");
+  md.push("");
+  md.push(
+    "1. **Name it by convention.** The base component is `<component>` (e.g. `button`); " +
+      "each variant is `<component>-<variant>` (e.g. `button-secondary`, `button-plain`). " +
+      "Style states use `<component>-<state>` (e.g. `button-hover`)."
+  );
+  md.push(
+    "2. **Add a `components` entry.** Give the variant key only the properties it " +
+      "overrides (`backgroundColor`, `textColor`, `rounded`, `padding`, …), each a " +
+      "`{group.token}` reference — e.g. " +
+      "`button-secondary: { backgroundColor: \"{colors.secondary-container}\", textColor: \"{colors.on-secondary-container}\" }`."
+  );
+  md.push(
+    "3. **Expose it as a typed prop.** Surface a `variant` union and select the matching " +
+      "token set at render time:"
+  );
+  md.push("   - **React / Vue / Svelte:** `variant: 'primary' | 'secondary' | 'plain'` → map to a class or `data-variant` attribute.");
+  md.push("   - **Web Components:** reflect `variant` to an attribute and switch `:host([variant=\"…\"])` custom properties.");
+  md.push("   - **Angular:** an `input()` of the union, bound via `[attr.data-variant]`.");
+  md.push(
+    "4. **Keep tokens the only source of color.** Properties the token schema can't " +
+      "express (borders, gaps, shadows) are described per component in prose — never " +
+      "hard-code colors for them."
+  );
+  md.push("");
+  md.push(
+    "Each variant-bearing component lists its variants (key + token bindings) in its " +
+      "**Variants** table below."
+  );
   md.push("");
 
   md.push("## UIKit — Component requirements");
@@ -263,6 +331,7 @@ export function generateSpec(opts: {
   md.push("");
   md.push("- [ ] Every component implements all listed states with token-bound styling.");
   md.push("- [ ] Each component exposes the documented input parameters with the listed types and defaults.");
+  md.push("- [ ] Every component variant is exposed via a typed prop and styled only from its `components` token entry.");
   md.push("- [ ] Documented behavior (interactions, focus, lifecycle, edge cases) is implemented.");
   md.push("- [ ] Specified animations/transitions are implemented and respect `prefers-reduced-motion`.");
   md.push("- [ ] No hard-coded colors, radii, or font values — all derive from tokens.");

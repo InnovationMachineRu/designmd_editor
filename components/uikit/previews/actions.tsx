@@ -7,7 +7,9 @@ import {
   primary,
   onPrimary,
   onSurface,
+  onSurfaceVar,
   outlineVar,
+  surfaceHigh,
 } from "./primitives";
 
 export function ButtonPreview({ doc }: PreviewProps) {
@@ -107,5 +109,98 @@ export function LinkPreview({ doc }: PreviewProps) {
       </a>{" "}
       to learn more.
     </span>
+  );
+}
+
+const Chevron = ({ color }: { color: string }) => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <path d="m6 9 6 6 6-6" />
+  </svg>
+);
+
+export function SplitButtonPreview({ doc }: PreviewProps) {
+  return (
+    <div style={{ display: "inline-flex", borderRadius: 10, overflow: "hidden" }}>
+      <TButton doc={doc} variant="primary" style={{ borderRadius: 0, borderRight: `1px solid ${outlineVar(doc)}` }}>
+        Save
+      </TButton>
+      <button
+        type="button"
+        aria-label="More actions"
+        style={{
+          width: 34, display: "inline-flex", alignItems: "center", justifyContent: "center",
+          border: "none", background: primary(doc), cursor: "pointer",
+        }}
+      >
+        <Chevron color={onPrimary(doc)} />
+      </button>
+    </div>
+  );
+}
+
+export function ToggleButtonPreview({ doc }: PreviewProps) {
+  const Item = ({ label, on }: { label: string; on: boolean }) => (
+    <button
+      type="button"
+      aria-pressed={on}
+      style={{
+        height: 36, padding: "0 14px", fontSize: 13, fontWeight: 600, cursor: "pointer",
+        borderRadius: 8, border: `1px solid ${outlineVar(doc)}`,
+        background: on ? surfaceHigh(doc) : "transparent",
+        color: on ? onSurface(doc) : onSurfaceVar(doc),
+      }}
+    >
+      {label}
+    </button>
+  );
+  return (
+    <Row>
+      <Item label="Bold" on />
+      <Item label="Italic" on={false} />
+    </Row>
+  );
+}
+
+export function CopyButtonPreview({ doc }: PreviewProps) {
+  return (
+    <button
+      type="button"
+      style={{
+        display: "inline-flex", alignItems: "center", gap: 7, height: 34, padding: "0 12px",
+        fontSize: 12, fontWeight: 600, cursor: "pointer", borderRadius: 8,
+        border: `1px solid ${outlineVar(doc)}`, background: surfaceHigh(doc), color: onSurface(doc),
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={onSurface(doc)} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+        <rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" />
+      </svg>
+      Copy
+    </button>
+  );
+}
+
+export function SegmentedControlPreview({ doc }: PreviewProps) {
+  const items = ["List", "Board", "Grid"];
+  const active = 0;
+  return (
+    <div
+      style={{
+        display: "inline-flex", gap: 2, padding: 3, borderRadius: 9999,
+        background: surfaceHigh(doc), border: `1px solid ${outlineVar(doc)}`,
+      }}
+    >
+      {items.map((it, i) => (
+        <span
+          key={it}
+          style={{
+            padding: "6px 14px", fontSize: 12, fontWeight: 600, borderRadius: 9999,
+            background: i === active ? primary(doc) : "transparent",
+            color: i === active ? onPrimary(doc) : onSurfaceVar(doc),
+          }}
+        >
+          {it}
+        </span>
+      ))}
+    </div>
   );
 }

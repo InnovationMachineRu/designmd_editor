@@ -170,7 +170,14 @@ export interface UikitSnapshot {
   /** Selected components keyed by id, with the fields useful for an LLM/dev. */
   components: Record<
     string,
-    { name: string; states: string[]; tokenRoles: string[]; a11y: string[] }
+    {
+      name: string;
+      states: string[];
+      tokenRoles: string[];
+      a11y: string[];
+      /** Named style variants exposed by the component. */
+      variants?: { id: string; name: string }[];
+    }
   >;
 }
 
