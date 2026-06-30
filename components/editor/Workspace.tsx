@@ -9,6 +9,7 @@ import { btnGhostCls, btnPrimaryCls } from "@/components/ui/styles";
 import { Stepper } from "@/components/wizard/Stepper";
 import { LintPanel } from "@/components/LintPanel";
 import { CodeModal } from "@/components/CodeModal";
+import { ImportDialog } from "@/components/ImportDialog";
 import { EditorPanel } from "./EditorPanel";
 import { PreviewPane } from "@/components/preview/PreviewPane";
 
@@ -19,6 +20,7 @@ export function Workspace() {
   const [savedPath, setSavedPath] = useState<string | null>(null);
   const [content, setContent] = useState<string | null>(null);
   const [showCode, setShowCode] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const onSave = async () => {
@@ -63,6 +65,9 @@ export function Workspace() {
           <Stepper current={1} />
         </div>
         <div className="flex items-center gap-2">
+          <button className={btnGhostCls} onClick={() => setShowImport(true)} disabled={busy !== null}>
+            Import
+          </button>
           <button className={btnGhostCls} onClick={onValidate} disabled={busy !== null}>
             {busy === "validate" ? "Validating…" : "Validate"}
           </button>
@@ -116,6 +121,8 @@ export function Workspace() {
           onClose={() => setShowCode(false)}
         />
       )}
+
+      {showImport && <ImportDialog onClose={() => setShowImport(false)} />}
     </div>
   );
 }

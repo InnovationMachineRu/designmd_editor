@@ -65,6 +65,12 @@ export type CanonicalSection = (typeof CANONICAL_SECTIONS)[number];
 /** Rationale prose keyed by canonical section heading. */
 export type Sections = Partial<Record<CanonicalSection, string>>;
 
+/** Text reading direction. */
+export type Direction = "ltr" | "rtl";
+
+/** Text flow axis. "vertical" maps to CSS vertical-rl in the preview. */
+export type WritingMode = "horizontal" | "vertical";
+
 /**
  * The full design document. The YAML front-matter maps to the token groups;
  * `sections` holds the markdown-body rationale.
@@ -79,10 +85,20 @@ export interface DesignDoc {
   spacing: Record<string, DimensionValue | number>;
   components: Record<string, ComponentToken>;
   sections: Sections;
+  /** Writing direction; defaults to "ltr" when omitted. Stored in x-design-md. */
+  direction?: Direction;
+  /** Writing flow; defaults to "horizontal" when omitted. Stored in x-design-md. */
+  writingMode?: WritingMode;
 }
 
 /** The token groups that participate in `{group.token}` references. */
 export type ReferableGroup = "colors" | "typography" | "rounded" | "spacing";
+
+/** A token the user selected in the live preview, to highlight in the editor. */
+export interface HighlightTarget {
+  group: "colors" | "typography" | "components";
+  key: string;
+}
 
 /** Theme variant selectable in the preview pane. */
 export type ThemeMode = "light" | "dark";

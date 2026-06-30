@@ -7,9 +7,12 @@ import type {
   ComponentToken,
   DecorKind,
   DesignDoc,
+  Direction,
+  HighlightTarget,
   StylePreset,
   ThemeMode,
   TypographyToken,
+  WritingMode,
 } from "./designmd/types";
 import { PRESETS } from "./presets";
 import { blankDocs } from "./presets/blank";
@@ -60,6 +63,9 @@ export interface EditorState {
   /** User-created styles, persisted to localStorage. */
   customPresets: Record<string, StylePreset>;
 
+  /** Token selected in the live preview to highlight in the editor. */
+  highlight: HighlightTarget | null;
+
   // UIKit step state
   selectedComponents: string[];
   targetTech: string;
@@ -71,6 +77,14 @@ export interface EditorState {
   applyPreset: (id: string) => void;
   setTheme: (theme: ThemeMode) => void;
   loadDoc: (doc: DesignDoc) => void;
+  importDoc: (doc: DesignDoc) => void;
+
+  // --- writing direction ---
+  setDirection: (dir: Direction) => void;
+  setWritingMode: (mode: WritingMode) => void;
+
+  // --- preview ↔ editor linking ---
+  setHighlight: (target: HighlightTarget | null) => void;
 
   // --- custom styles ---
   saveCurrentAsStyle: (name: string, decor: DecorKind) => void;
@@ -147,6 +161,7 @@ export const useEditor = create<EditorState>()(
     theme: "dark",
     docs: initialDocs,
     customPresets: {},
+    highlight: null,
     selectedComponents: [],
     targetTech: "react",
 
@@ -163,6 +178,54 @@ export const useEditor = create<EditorState>()(
         },
       });
     },
+
+    importDoc: (incoming) =>
+      set((s) => {
+        // Merge: overwrite groups/values present in the imported doc, keep the rest.
+        const base = cloneDoc(s.docs[s.theme]);
+        const merged: DesignDoc = {
+          ...base,
+          ...(incoming.name ? { name: incoming.name } : {}),
+          ...(incoming.description !== undefined
+            ? { description: incoming.description }
+            : {}),
+          ...(incoming.version !== undefined ? { version: incoming.version } : {}),
+          colors: { ...base.colors, ...incoming.colors },
+          typography: { ...base.typography, ...incoming.typography },
+          rounded: { ...base.rounded, ...incoming.rounded },
+          spacing: { ...base.spacing, ...incoming.spacing },
+          components: { ...base.components, ...incoming.components },
+          sections: { ...base.sections, ...incoming.sections },
+        };
+        // direction/writingMode are document-wide → apply to both themes.
+        const dir = incoming.direction ?? s.docs[s.theme].direction;
+        const wm = incoming.writingMode ?? s.docs[s.theme].writingMode;
+        const other: ThemeMode = s.theme === "light" ? "dark" : "light";
+        merged.direction = dir;
+        merged.writingMode = wm;
+        const otherDoc = cloneDoc(s.docs[other]);
+        otherDoc.direction = dir;
+        otherDoc.writingMode = wm;
+        return { docs: { [s.theme]: merged, [other]: otherDoc } as Record<ThemeMode, DesignDoc> };
+      }),
+
+    setDirection: (dir) =>
+      set((s) => ({
+        docs: {
+          light: { ...s.docs.light, direction: dir },
+          dark: { ...s.docs.dark, direction: dir },
+        },
+      })),
+
+    setWritingMode: (mode) =>
+      set((s) => ({
+        docs: {
+          light: { ...s.docs.light, writingMode: mode },
+          dark: { ...s.docs.dark, writingMode: mode },
+        },
+      })),
+
+    setHighlight: (target) => set({ highlight: target }),
 
     saveCurrentAsStyle: (name, decor) =>
       set((s) => {

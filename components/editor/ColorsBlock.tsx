@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useEditor } from "@/lib/store";
+import { useHighlight, ringIf } from "@/lib/useHighlight";
 import { uniqueName } from "@/lib/uniqueName";
 import { resolveValue } from "@/lib/designmd/tokens";
 import { Accordion } from "@/components/ui/Accordion";
@@ -14,14 +15,21 @@ export function ColorsBlock() {
   const doc = useEditor((s) => s.docs[s.theme]);
   const { setColor, renameColor, addColor, removeColor } = useEditor.getState();
   const [query, setQuery] = useState("");
+  const { open, setOpen, activeKey, containerRef } = useHighlight("colors", true);
 
-  const q = query.trim().toLowerCase();
+  // When a token is highlighted from the preview, don't hide it behind a filter.
+  const q = activeKey ? "" : query.trim().toLowerCase();
   const entries = Object.entries(doc.colors).filter(([name]) =>
     q ? name.toLowerCase().includes(q) : true
   );
 
   return (
-    <Accordion title="Colors" subtitle={`${Object.keys(doc.colors).length} tokens`} defaultOpen>
+    <Accordion
+      title="Colors"
+      subtitle={`${Object.keys(doc.colors).length} tokens`}
+      open={open}
+      onOpenChange={setOpen}
+    >
       <input
         className={`${inputCls} mt-2 mb-3`}
         value={query}
@@ -29,7 +37,7 @@ export function ColorsBlock() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      <div className="space-y-2">
+      <div className="space-y-2" ref={containerRef}>
         {entries.map(([name, value]) => {
           // Pair `on-X` foregrounds with their base `X` surface for a WCAG check.
           const base = name.startsWith("on-") ? name.slice(3) : null;
@@ -38,7 +46,11 @@ export function ColorsBlock() {
           const bg = baseValue ? resolveValue(doc, baseValue) : undefined;
 
           return (
-            <div key={name} className="flex items-center gap-2">
+            <div
+              key={name}
+              data-tkey={name}
+              className={`flex items-center gap-2 p-1 -m-1 ${ringIf(activeKey === name)}`}
+            >
               <div className="w-40 shrink-0">
                 <KeyInput name={name} onRename={(to) => renameColor(name, to)} />
               </div>

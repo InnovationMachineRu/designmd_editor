@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useEditor } from "@/lib/store";
+import { useHighlight, ringIf } from "@/lib/useHighlight";
 import { uniqueName } from "@/lib/uniqueName";
 import { COMPONENT_PROPS, type ComponentProp } from "@/lib/designmd/types";
 import { Accordion } from "@/components/ui/Accordion";
@@ -26,8 +27,9 @@ export function ComponentsBlock() {
   const { setComponentProp, renameComponent, addComponent, removeComponent } =
     useEditor.getState();
   const [query, setQuery] = useState("");
+  const { open, setOpen, activeKey, containerRef } = useHighlight("components");
 
-  const q = query.trim().toLowerCase();
+  const q = activeKey ? "" : query.trim().toLowerCase();
   const entries = Object.entries(doc.components).filter(([name]) =>
     q ? name.toLowerCase().includes(q) : true
   );
@@ -36,6 +38,8 @@ export function ComponentsBlock() {
     <Accordion
       title="Components"
       subtitle={`${Object.keys(doc.components).length} components`}
+      open={open}
+      onOpenChange={setOpen}
     >
       <input
         className={`${inputCls} mt-2 mb-3`}
@@ -44,12 +48,16 @@ export function ComponentsBlock() {
         onChange={(e) => setQuery(e.target.value)}
       />
 
-      <div className="space-y-3">
+      <div className="space-y-3" ref={containerRef}>
         {entries.map(([name, token]) => {
           const used = Object.keys(token) as ComponentProp[];
           const unused = COMPONENT_PROPS.filter((p) => !used.includes(p));
           return (
-            <div key={name} className="rounded-md border border-app-border p-3">
+            <div
+              key={name}
+              data-tkey={name}
+              className={`rounded-md border border-app-border p-3 ${ringIf(activeKey === name)}`}
+            >
               <div className="flex items-center gap-2 mb-3">
                 <div className="flex-1">
                   <KeyInput name={name} onRename={(to) => renameComponent(name, to)} />

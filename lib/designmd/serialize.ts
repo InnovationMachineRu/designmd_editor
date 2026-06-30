@@ -40,6 +40,15 @@ function frontMatterObject(doc: DesignDoc): Record<string, unknown> {
       ])
     );
   }
+
+  // Tool-specific metadata under a namespaced key the linter ignores (it only
+  // flags near-typos of the 8 schema keys). Only emitted when non-default.
+  const ext: Record<string, string> = {};
+  if (doc.direction && doc.direction !== "ltr") ext.direction = doc.direction;
+  if (doc.writingMode && doc.writingMode !== "horizontal")
+    ext.writingMode = doc.writingMode;
+  if (Object.keys(ext).length) fm["x-design-md"] = ext;
+
   return fm;
 }
 

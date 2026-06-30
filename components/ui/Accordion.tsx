@@ -6,21 +6,34 @@ export function Accordion({
   title,
   subtitle,
   defaultOpen = false,
+  open: controlledOpen,
+  onOpenChange,
   right,
   children,
 }: {
   title: string;
   subtitle?: string;
   defaultOpen?: boolean;
+  /** When provided, the accordion is controlled by the parent. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   right?: ReactNode;
   children: ReactNode;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [internalOpen, setInternalOpen] = useState(defaultOpen);
+  const open = controlledOpen ?? internalOpen;
+
+  const toggle = () => {
+    const next = !open;
+    if (controlledOpen === undefined) setInternalOpen(next);
+    onOpenChange?.(next);
+  };
+
   return (
     <div className="border border-app-border rounded-lg bg-app-panel overflow-hidden">
       <button
         type="button"
-        onClick={() => setOpen((o) => !o)}
+        onClick={toggle}
         className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-app-panel-2 transition-colors"
       >
         <span

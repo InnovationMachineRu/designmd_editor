@@ -74,6 +74,15 @@ export function parseDesignDoc(src: string): DesignDoc {
   const { yaml, body } = splitFrontMatter(src);
   const fm = (yaml.trim() ? yamlParse(yaml) : {}) ?? {};
 
+  // Tool metadata: accept the namespaced key or an $extensions fallback.
+  const ext = isRecord(fm["x-design-md"])
+    ? (fm["x-design-md"] as Record<string, unknown>)
+    : isRecord(fm["$extensions"])
+      ? (fm["$extensions"] as Record<string, unknown>)
+      : {};
+  const direction = ext.direction === "rtl" ? "rtl" : undefined;
+  const writingMode = ext.writingMode === "vertical" ? "vertical" : undefined;
+
   return {
     version: typeof fm.version === "string" ? fm.version : undefined,
     name: typeof fm.name === "string" ? fm.name : "Untitled System",
@@ -84,6 +93,8 @@ export function parseDesignDoc(src: string): DesignDoc {
     spacing: isRecord(fm.spacing) ? fm.spacing : {},
     components: isRecord(fm.components) ? fm.components : {},
     sections: parseSections(body),
+    direction,
+    writingMode,
   };
 }
 
