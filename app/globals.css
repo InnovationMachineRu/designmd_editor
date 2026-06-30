@@ -55,3 +55,15 @@ body {
   color: var(--dmd-color-on-background, #111111);
   transition: background 0.2s ease, color 0.2s ease;
 }
+
+/* Inspect mode: while Option/Alt is held, selectable tokens get an affordance
+   and the surface shows a crosshair. Clicking then selects the token instead of
+   performing the element's normal action (see components/preview/inspect.ts). */
+.dmd-inspect,
+.dmd-inspect * {
+  cursor: crosshair !important;
+}
+.dmd-inspect [data-selectable]:hover {
+  outline: 1px dashed var(--color-app-accent, #4f8cff);
+  outline-offset: 2px;
+}

@@ -83,6 +83,17 @@ export function parseDesignDoc(src: string): DesignDoc {
   const direction = ext.direction === "rtl" ? "rtl" : undefined;
   const writingMode = ext.writingMode === "vertical" ? "vertical" : undefined;
 
+  // Breakpoints: keep only positive numeric values.
+  let breakpoints: Record<string, number> | undefined;
+  if (isRecord(ext.breakpoints)) {
+    const bp: Record<string, number> = {};
+    for (const [k, v] of Object.entries(ext.breakpoints as Record<string, unknown>)) {
+      const n = typeof v === "number" ? v : Number(v);
+      if (Number.isFinite(n) && n > 0) bp[k] = n;
+    }
+    if (Object.keys(bp).length) breakpoints = bp;
+  }
+
   return {
     version: typeof fm.version === "string" ? fm.version : undefined,
     name: typeof fm.name === "string" ? fm.name : "Untitled System",
@@ -95,6 +106,7 @@ export function parseDesignDoc(src: string): DesignDoc {
     sections: parseSections(body),
     direction,
     writingMode,
+    breakpoints,
   };
 }
 

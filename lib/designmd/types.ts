@@ -89,14 +89,24 @@ export interface DesignDoc {
   direction?: Direction;
   /** Writing flow; defaults to "horizontal" when omitted. Stored in x-design-md. */
   writingMode?: WritingMode;
+  /** Responsive breakpoints (name → min-width px). Stored in x-design-md. */
+  breakpoints?: Record<string, number>;
 }
+
+/** Fallback breakpoints when a document defines none. */
+export const DEFAULT_BREAKPOINTS: Record<string, number> = {
+  sm: 640,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+};
 
 /** The token groups that participate in `{group.token}` references. */
 export type ReferableGroup = "colors" | "typography" | "rounded" | "spacing";
 
 /** A token the user selected in the live preview, to highlight in the editor. */
 export interface HighlightTarget {
-  group: "colors" | "typography" | "components";
+  group: "colors" | "typography" | "components" | "rounded" | "spacing";
   key: string;
 }
 

@@ -23,6 +23,7 @@ export function SpacingBlock() {
       onRename={renameSpacing}
       onRemove={removeSpacing}
       onAdd={() => addSpacing(uniqueName("space", doc.spacing), "8px")}
+      highlightGroup="spacing"
       renderValue={(_name, value, onChange) => (
         <DimensionField
           value={value}

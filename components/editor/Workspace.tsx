@@ -15,6 +15,8 @@ import { PreviewPane } from "@/components/preview/PreviewPane";
 
 export function Workspace() {
   const doc = useEditor((s) => s.docs[s.theme]);
+  const settingsCollapsed = useEditor((s) => s.settingsCollapsed);
+  const fullscreen = useEditor((s) => s.previewFullscreen);
   const [busy, setBusy] = useState<"save" | "validate" | null>(null);
   const [lint, setLint] = useState<LintResult | null>(null);
   const [savedPath, setSavedPath] = useState<string | null>(null);
@@ -77,15 +79,31 @@ export function Workspace() {
         </div>
       </header>
 
-      {/* Body: editor | preview */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-2">
-        <div className="min-h-0 overflow-auto scroll-thin border-r border-app-border p-4">
-          <EditorPanel />
+      {/* Body: editor | preview (editor hidden when collapsed). Hidden while
+          fullscreen so only the overlay's PreviewPane mounts. */}
+      {!fullscreen && (
+        <div
+          className={`flex-1 min-h-0 grid grid-cols-1 ${
+            settingsCollapsed ? "" : "lg:grid-cols-2"
+          }`}
+        >
+          {!settingsCollapsed && (
+            <div className="min-h-0 overflow-auto scroll-thin border-r border-app-border p-4">
+              <EditorPanel />
+            </div>
+          )}
+          <div className="min-h-0 p-4">
+            <PreviewPane />
+          </div>
         </div>
-        <div className="min-h-0 p-4">
+      )}
+
+      {/* Fullscreen preview overlay */}
+      {fullscreen && (
+        <div className="fixed inset-0 z-40 bg-app-bg p-4">
           <PreviewPane />
         </div>
-      </div>
+      )}
 
       {/* Results footer */}
       {(lint || error) && (

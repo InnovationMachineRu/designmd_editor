@@ -2,17 +2,18 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
-import type {
-  ComponentProp,
-  ComponentToken,
-  DecorKind,
-  DesignDoc,
-  Direction,
-  HighlightTarget,
-  StylePreset,
-  ThemeMode,
-  TypographyToken,
-  WritingMode,
+import {
+  DEFAULT_BREAKPOINTS,
+  type ComponentProp,
+  type ComponentToken,
+  type DecorKind,
+  type DesignDoc,
+  type Direction,
+  type HighlightTarget,
+  type StylePreset,
+  type ThemeMode,
+  type TypographyToken,
+  type WritingMode,
 } from "./designmd/types";
 import { PRESETS } from "./presets";
 import { blankDocs } from "./presets/blank";
@@ -83,6 +84,12 @@ export interface EditorState {
   setDirection: (dir: Direction) => void;
   setWritingMode: (mode: WritingMode) => void;
 
+  // --- breakpoints ---
+  setBreakpoint: (name: string, value: number) => void;
+  renameBreakpoint: (from: string, to: string) => void;
+  addBreakpoint: (name: string, value: number) => void;
+  removeBreakpoint: (name: string) => void;
+
   // --- preview ↔ editor linking ---
   setHighlight: (target: HighlightTarget | null) => void;
 
@@ -131,6 +138,15 @@ export interface EditorState {
   toggleComponent: (id: string) => void;
   setSelectedComponents: (ids: string[]) => void;
   setTargetTech: (tech: string) => void;
+
+  // --- preview UI (ephemeral, not persisted) ---
+  settingsCollapsed: boolean;
+  previewFullscreen: boolean;
+  /** "fit" | "mobile" | a breakpoint name → device frame width. */
+  previewDevice: string;
+  setSettingsCollapsed: (v: boolean) => void;
+  setPreviewFullscreen: (v: boolean) => void;
+  setPreviewDevice: (d: string) => void;
 }
 
 const initialDocs = {
@@ -146,6 +162,18 @@ export const useEditor = create<EditorState>()(
     set((s) => ({
       docs: { ...s.docs, [s.theme]: fn(cloneDoc(s.docs[s.theme])) },
     }));
+
+  /** Breakpoints are document-wide → mutate both theme docs together. */
+  const mutateBreakpoints = (
+    fn: (bp: Record<string, number>) => Record<string, number>
+  ) =>
+    set((s) => {
+      const apply = (d: DesignDoc): DesignDoc => ({
+        ...d,
+        breakpoints: fn(d.breakpoints ?? { ...DEFAULT_BREAKPOINTS }),
+      });
+      return { docs: { light: apply(s.docs.light), dark: apply(s.docs.dark) } };
+    });
 
   /** Generate a unique custom-style id from a name. */
   const newStyleId = (name: string, custom: Record<string, StylePreset>): string => {
@@ -164,6 +192,9 @@ export const useEditor = create<EditorState>()(
     highlight: null,
     selectedComponents: [],
     targetTech: "react",
+    settingsCollapsed: false,
+    previewFullscreen: false,
+    previewDevice: "fit",
 
     active: () => get().docs[get().theme],
 
@@ -197,15 +228,20 @@ export const useEditor = create<EditorState>()(
           components: { ...base.components, ...incoming.components },
           sections: { ...base.sections, ...incoming.sections },
         };
-        // direction/writingMode are document-wide → apply to both themes.
+        // direction/writingMode/breakpoints are document-wide → apply to both themes.
         const dir = incoming.direction ?? s.docs[s.theme].direction;
         const wm = incoming.writingMode ?? s.docs[s.theme].writingMode;
+        const bp = incoming.breakpoints
+          ? { ...(s.docs[s.theme].breakpoints ?? {}), ...incoming.breakpoints }
+          : s.docs[s.theme].breakpoints;
         const other: ThemeMode = s.theme === "light" ? "dark" : "light";
         merged.direction = dir;
         merged.writingMode = wm;
+        merged.breakpoints = bp;
         const otherDoc = cloneDoc(s.docs[other]);
         otherDoc.direction = dir;
         otherDoc.writingMode = wm;
+        otherDoc.breakpoints = bp;
         return { docs: { [s.theme]: merged, [other]: otherDoc } as Record<ThemeMode, DesignDoc> };
       }),
 
@@ -226,6 +262,19 @@ export const useEditor = create<EditorState>()(
       })),
 
     setHighlight: (target) => set({ highlight: target }),
+
+    setBreakpoint: (name, value) =>
+      mutateBreakpoints((bp) => ({ ...bp, [name]: value })),
+    renameBreakpoint: (from, to) =>
+      mutateBreakpoints((bp) => renameKey(bp, from, to)),
+    addBreakpoint: (name, value) =>
+      mutateBreakpoints((bp) => ({ ...bp, [name]: value })),
+    removeBreakpoint: (name) =>
+      mutateBreakpoints((bp) => {
+        const next = { ...bp };
+        delete next[name];
+        return next;
+      }),
 
     saveCurrentAsStyle: (name, decor) =>
       set((s) => {
@@ -383,6 +432,10 @@ export const useEditor = create<EditorState>()(
       })),
     setSelectedComponents: (ids) => set({ selectedComponents: ids }),
     setTargetTech: (tech) => set({ targetTech: tech }),
+
+    setSettingsCollapsed: (v) => set({ settingsCollapsed: v }),
+    setPreviewFullscreen: (v) => set({ previewFullscreen: v }),
+    setPreviewDevice: (d) => set({ previewDevice: d }),
   };
     },
     {

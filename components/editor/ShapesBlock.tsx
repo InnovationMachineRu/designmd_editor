@@ -18,6 +18,7 @@ export function ShapesBlock() {
       onRename={renameRounded}
       onRemove={removeRounded}
       onAdd={() => addRounded(uniqueName("radius", doc.rounded), "0.5rem")}
+      highlightGroup="rounded"
       renderValue={(_name, value, onChange) => (
         <RadiusField value={value} onChange={onChange} />
       )}
